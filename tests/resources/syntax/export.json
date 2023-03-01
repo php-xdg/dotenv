@@ -1,0 +1,20 @@
+[
+  {
+    "desc": "valid at start of line",
+    "input": "export a=\"1\" b=\"2\"",
+    "expected": {
+      "a": "1",
+      "b": "2"
+    }
+  },
+  {
+    "desc": "invalid after an assignment on the same line",
+    "input": "a=\"1\" export b=\"2\"",
+    "error": "ParseError"
+  },
+  {
+    "desc": "invalid after another export on the same line",
+    "input": "export a=\"1\" export b=\"2\"",
+    "error": "ParseError"
+  }
+]

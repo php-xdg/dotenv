@@ -1,0 +1,58 @@
+[
+  {
+    "input": "a=${foo-",
+    "error": "ParseError",
+    "desc": "Missing closing brace in expansion arguments"
+  },
+  {
+    "input": "a=${a:-0} b=${b:-} c=${c:-1}",
+    "expected": {
+      "a": "42",
+      "b": "",
+      "c": "1"
+    },
+    "scope": {
+      "a": "42"
+    },
+    "desc": ":- operator falls back to provided default"
+  },
+  {
+    "input": "a=${a:-42}",
+    "expected": {
+      "a": "42"
+    },
+    "scope": {
+      "a": ""
+    },
+    "override": true,
+    "desc": ":- operator overrides env if specified"
+  },
+  {
+    "input": "a=${a:-\"foo${b:-\"${c:-'nope'}\"}baz\"}",
+    "expected": {
+      "a": "foobarbaz"
+    },
+    "scope": {
+      "c": "bar"
+    },
+    "desc": ":- operator supports recursive expansion"
+  },
+  {
+    "input": "a=${a:=foo} b=$a",
+    "expected": {
+      "a": "foo",
+      "b": "foo"
+    },
+    "desc": ":= operator performs fallback assignment"
+  },
+  {
+    "input": "d=${a:=foo${b:=bar${c:=baz}}}",
+    "expected": {
+      "a": "foobarbaz",
+      "b": "barbaz",
+      "c": "baz",
+      "d": "foobarbaz"
+    },
+    "desc": ":= operator supports recursive expansion"
+  }
+]

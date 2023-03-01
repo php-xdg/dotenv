@@ -1,0 +1,72 @@
+[
+    {
+        "desc": "unknown escaped char in unquoted value",
+        "input": "a\\b",
+        "expected": "ab"
+    },
+    {
+        "desc": "unknown escaped char in double-quoted value",
+        "input": "\"a\\b\"",
+        "expected": "a\\b"
+    },
+    {
+        "desc": "unquoted, concatenate quoting styles",
+        "input": "a'b'\"c\"$'d'$\"e\"",
+        "expected": "abc$d$e"
+    },
+    {
+        "desc": "quoted, concatenate quoting styles",
+        "input": "\"a'b'$'c'$\\\"d\\\"\"",
+        "expected": "a'b'$'c'$\"d\""
+    },
+    {
+        "desc": "unquoted, line continuation",
+        "input": "a\\\nb",
+        "expected": "ab"
+    },
+    {
+        "desc": "double-quoted, line continuation + whitespace",
+        "input": "\"a\\\n  b\"",
+        "expected": "a  b"
+    },
+    {
+        "desc": "single-quoted, line continuation + whitespace",
+        "input": "'a\\\n  b'",
+        "expected": "a\\\n  b"
+    },
+    {
+        "desc": "line continuation in unquoted expansion",
+        "input": "${NOPE:-foo\\\n  bar}",
+        "expected": "foo  bar"
+    },
+    {
+        "desc": "line continuation in double-quoted expansion",
+        "input": "\"${NOPE:-foo\\\n  bar}\"",
+        "expected": "foo  bar"
+    },
+    {
+        "desc": "no line continuations in single-quoted expansions",
+        "input": "'${NOPE:-foo\\\n  bar}'",
+        "expected": "${NOPE:-foo\\\n  bar}"
+    },
+    {
+        "desc": "line continuation in single-quoted expansion in double-quoted string",
+        "input": "\"${NOPE:-'foo\\\n  bar'}\"",
+        "expected": "'foo  bar'"
+    },
+    {
+        "desc": "unknown escaped char in unquoted expansion",
+        "input": "${NOPE:-fo\\o}",
+        "expected": "foo"
+    },
+    {
+        "desc": "unknown escaped char in quoted expansion",
+        "input": "\"${NOPE:-fo\\o}\"",
+        "expected": "fo\\o"
+    },
+    {
+        "desc": "concatenation of quoting styles in unquoted string in double-quoted string",
+        "input": "\"${NOPE:-a'b'\"c\"${NADA:-d'e'\"f\"}}\"",
+        "expected": "a'b'cd'e'f"
+    }
+]
