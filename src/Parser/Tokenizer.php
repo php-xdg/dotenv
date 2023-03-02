@@ -13,7 +13,7 @@ final class Tokenizer
 
     private const IDENT_RX = '/[A-Za-z_][A-Za-z0-9_]*/A';
 
-    private const WS_RX = '/[ \t\r\f\v]+/A';
+    private const WS_RX = '/[ \t]+/A';
 
     /**
      * This pattern MUST NOT match any character that can start a token
@@ -21,7 +21,7 @@ final class Tokenizer
      */
     private const CHARACTERS_RX = <<<'REGEXP'
     /
-        [^\\#\sA-Za-z_${}=+:?"'-]+
+        [^\\#\n\x20\tA-Za-z_${}=+:?"'-]+
     /Ax
     REGEXP;
 
@@ -44,7 +44,8 @@ final class Tokenizer
                     return $token;
                 }
                 return $this->make(TokenKind::Characters, '\\');
-            case ' ':case "\t":case "\f":case "\r":case "\v":
+            case ' ':
+            case "\t":
                 return $this->consumeWhitespace();
             case "\n":
                 $token = $this->make(TokenKind::Newline, "\n");

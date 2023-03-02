@@ -57,4 +57,16 @@ return [
         'desc' => 'concatenation of quoting styles in unquoted string in double-quoted string',
         'input' => '"${NOPE:-a\'b\'"c"${NADA:-d\'e\'"f"}}"',
     ],
+    [
+        'desc' => 'carriage-return in unquoted value',
+        'input' => "a\rb=0",
+    ],
+    [
+        'desc' => 'form-feed in unquoted value',
+        'input' => "a\fb=0",
+    ],
+    [
+        'desc' => 'vertical-tab in unquoted value',
+        'input' => "a\vb=0",
+    ],
 ];

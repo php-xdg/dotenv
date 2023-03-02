@@ -68,5 +68,20 @@
         "desc": "concatenation of quoting styles in unquoted string in double-quoted string",
         "input": "\"${NOPE:-a'b'\"c\"${NADA:-d'e'\"f\"}}\"",
         "expected": "a'b'cd'e'f"
+    },
+    {
+        "desc": "carriage-return in unquoted value",
+        "input": "a\rb=0",
+        "expected": "a\rb=0"
+    },
+    {
+        "desc": "form-feed in unquoted value",
+        "input": "a\fb=0",
+        "expected": "a\fb=0"
+    },
+    {
+        "desc": "vertical-tab in unquoted value",
+        "input": "a\u000bb=0",
+        "expected": "a\u000bb=0"
     }
 ]
