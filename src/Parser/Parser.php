@@ -81,6 +81,13 @@ final class Parser
                     }
                     $this->consume();
                     break;
+                case TokenKind::Special:
+                    throw new ParseError(sprintf(
+                        'Unescaped special character "%s" in unquoted value on line %d, column %d',
+                        $token->value,
+                        $token->line,
+                        $token->col,
+                    ));
                 default:
                     $value = $this->charsUntil(
                         TokenKind::Newline,
@@ -89,6 +96,7 @@ final class Parser
                         TokenKind::DoubleQuote,
                         TokenKind::SingleQuote,
                         TokenKind::Escaped,
+                        TokenKind::Special,
                     );
                     self::pushValue($nodes, $value);
                     break;

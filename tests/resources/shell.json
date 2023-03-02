@@ -88,5 +88,10 @@
         "desc": "vertical-tab in unquoted value",
         "input": "a\u000bb=0",
         "expected": "a\u000bb=0"
+    },
+    {
+        "desc": "special char in unquoted expansion",
+        "input": "${NOPE:-a&b;c}",
+        "expected": "a&b;c"
     }
 ]

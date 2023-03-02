@@ -73,4 +73,8 @@ return [
         'desc' => 'vertical-tab in unquoted value',
         'input' => "a\vb=0",
     ],
+    [
+        'desc' => 'special char in unquoted expansion',
+        'input' => '${NOPE:-a&b;c}',
+    ],
 ];

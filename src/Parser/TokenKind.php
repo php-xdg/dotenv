@@ -24,6 +24,7 @@ enum TokenKind
     case QuestionMark;
     case DoubleQuote;
     case SingleQuote;
+    case Special;
 
     public static function tryFromChar(string $char): ?self
     {
@@ -39,6 +40,8 @@ enum TokenKind
             '?' => self::QuestionMark,
             '"' => self::DoubleQuote,
             "'" => self::SingleQuote,
+            // https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_02
+            '|', '&', ';', '<', '>', '(', ')', '`' => self::Special,
             default => null,
         };
     }

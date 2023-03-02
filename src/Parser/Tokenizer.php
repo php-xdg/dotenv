@@ -21,7 +21,7 @@ final class Tokenizer
      */
     private const CHARACTERS_RX = <<<'REGEXP'
     /
-        [^\\#\n\x20\tA-Za-z_${}=+:?"'-]+
+        [^\\#\n\x20\tA-Za-z_${}=+:?"'|&;<>()`-]+
     /Ax
     REGEXP;
 

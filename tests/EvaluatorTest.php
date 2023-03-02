@@ -6,6 +6,7 @@ use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Xdg\Dotenv\Evaluator\Evaluator;
+use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Exception\UndefinedVariable;
 use Xdg\Dotenv\Parser\Parser;
 use Xdg\Dotenv\Parser\Tokenizer;
@@ -83,5 +84,24 @@ final class EvaluatorTest extends TestCase
             'a=${foo?}',
             'Missing required value for variable "foo"',
         ];
+    }
+
+    #[DataProvider('unescapedSpecialCharsProvider')]
+    public function testUnescapedSpecialChars(string $input): void
+    {
+        $this->expectException(ParseError::class);
+        self::evaluate($input);
+    }
+
+    public static function unescapedSpecialCharsProvider(): iterable
+    {
+        // https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_02
+        $chars = ['|', '&', ';', '<', '>', '(', ')', '`'];
+        foreach ($chars as $c) {
+            $key = sprintf('Unescaped "%s" in unquoted string', $c);
+            yield $key => [
+                sprintf('a=a%sb', $c),
+            ];
+        }
     }
 }
