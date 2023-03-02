@@ -30,6 +30,10 @@ return [
         'input' => "'a\\\n  b'",
     ],
     [
+        'desc' => 'whitespace in unquoted expansion',
+        'input' => "\${NOPE:-foo  bar}"
+    ],
+    [
         'desc' => 'line continuation in unquoted expansion',
         'input' => "\${NOPE:-foo\\\n  bar}"
     ],
