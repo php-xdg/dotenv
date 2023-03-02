@@ -1,5 +1,12 @@
 [
   {
+    "input": "a=a\\",
+    "expected": {
+      "a": "a\\"
+    },
+    "desc": "backslash at EOF"
+  },
+  {
     "input": "a=\"b\\\"c\"",
     "expected": {
       "a": "b\"c"
