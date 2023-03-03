@@ -1,0 +1,33 @@
+dotenv <- WSC* (exports / assignment-list)* WSC*
+
+exports         <- 'export' whitespace assignment (whitespace assignment)*
+assignment-list <- assignment (WS assignment)* WSC*
+assignment      <- identifier "=" value
+value           <- (single-quoted / double-quoted / unquoted)*
+
+single-quoted <- "'" (!"'")* "'"
+
+double-quoted         <- '"' double-quoted-content*  '"'
+double-quoted-content <- escaped / expansion / !(shell-parameter / '"')
+
+unquoted          <- escaped / expansion / unquoted-content
+unquoted-content  <- !(shell-parameter / shell-special / whitespace / newline / EOF)
+
+expansion         <- simple-expansion / complex-expansion
+simple-expansion  <- '$' ('{' identifier '}' / identifier)
+complex-expansion <- '${' identifier operator value? '}'
+operator          <- ':'? ('-' / '+' / '=' / '?')
+
+identifier <- [a-zA-Z_] [a-zA-Z0-9_]*
+
+shell-special     <- '|' / '&' / ';' / '<' / '>' / '(' / ')' / '`'
+shell-parameter   <- '$' (shell-param-name / '{' shell-param-name '}')
+shell-param-name  <- '@' / '*' / '#' / '?' / '$' / '!' / '-' / [0-9]+
+
+escaped     <- '\' .
+WSC         <- comment / whitespace / newline
+comment     <- '#' (!newline)* (newline / EOF)
+WS          <- whitespace / newline
+newline     <- 0x0A
+whitespace  <- 0x20 / 0x09
+EOF         <- !.
