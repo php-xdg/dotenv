@@ -25,6 +25,7 @@ enum TokenKind
     case DoubleQuote;
     case SingleQuote;
     case Special;
+    case ShellParameter;
 
     public static function tryFromChar(string $char): ?self
     {

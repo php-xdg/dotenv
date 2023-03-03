@@ -82,12 +82,15 @@ final class Parser
                     $this->consume();
                     break;
                 case TokenKind::Special:
-                    throw new ParseError(sprintf(
-                        'Unescaped special character "%s" in unquoted value on line %d, column %d',
-                        $token->value,
-                        $token->line,
-                        $token->col,
-                    ));
+                    throw ParseError::at(
+                        sprintf('Unescaped special character "%s" in unquoted value', $token->value),
+                        $token,
+                    );
+                case TokenKind::ShellParameter:
+                    throw ParseError::at(
+                        sprintf('Reserved shell parameter "%s" in unquoted value', $token->value),
+                        $token,
+                    );
                 default:
                     $value = $this->charsUntil(
                         TokenKind::Newline,
@@ -97,6 +100,7 @@ final class Parser
                         TokenKind::SingleQuote,
                         TokenKind::Escaped,
                         TokenKind::Special,
+                        TokenKind::ShellParameter,
                     );
                     self::pushValue($nodes, $value);
                     break;
@@ -155,18 +159,6 @@ final class Parser
                         $start->line,
                         $start->col,
                     ));
-                case TokenKind::DoubleQuote:
-                    $this->consume();
-                    return self::createValue($nodes);
-                case TokenKind::Dollar:
-                    self::pushValue($nodes, $this->parsePossibleReference(true));
-                    break;
-                case TokenKind::Special:
-                    if ($token->value === '`') {
-                        throw ParseError::at('Unsupported command expansion', $token);
-                    }
-                    self::pushValue($nodes, $token->value);
-                    break;
                 case TokenKind::Escaped:
                     $this->consume();
                     switch ($token->value) {
@@ -182,8 +174,32 @@ final class Parser
                             break;
                     }
                     break;
+                case TokenKind::DoubleQuote:
+                    $this->consume();
+                    return self::createValue($nodes);
+                case TokenKind::Dollar:
+                    self::pushValue($nodes, $this->parsePossibleReference(true));
+                    break;
+                case TokenKind::ShellParameter:
+                    throw ParseError::at(
+                        sprintf('Reserved shell parameter "%s" in double-quoted value', $token->value),
+                        $token,
+                    );
+                case TokenKind::Special:
+                    if ($token->value === '`') {
+                        throw ParseError::at('Unsupported command expansion', $token);
+                    }
+                    $this->consume();
+                    self::pushValue($nodes, $token->value);
+                    break;
                 default:
-                    $value = $this->charsUntil(TokenKind::Dollar, TokenKind::DoubleQuote, TokenKind::Escaped);
+                    $value = $this->charsUntil(
+                        TokenKind::Escaped,
+                        TokenKind::DoubleQuote,
+                        TokenKind::Dollar,
+                        TokenKind::ShellParameter,
+                        TokenKind::Special,
+                    );
                     self::pushValue($nodes, $value);
                     break;
             }
@@ -209,12 +225,10 @@ final class Parser
                 $rhs = $this->parseExpansionArguments($quoted);
                 return new ComplexReference($id, $op, $rhs);
             case TokenKind::Special:
-                switch ($token->value) {
-                    case '(':
-                        throw ParseError::at('Unsupported command or arithmetic expansion', $token);
-                    default:
-                        return new SimpleValue('$');
+                if ($token->value === '(') {
+                    throw ParseError::at('Unsupported command or arithmetic expansion', $token);
                 }
+            // fallthrough
             default:
                 return new SimpleValue('$');
         }
@@ -273,6 +287,11 @@ final class Parser
                 case TokenKind::CloseBrace:
                     $this->consume();
                     return self::createValue($nodes);
+                case TokenKind::ShellParameter:
+                    throw ParseError::at(
+                        sprintf('Reserved shell parameter "%s" in expansion', $token->value),
+                        $token,
+                    );
                 default:
                     $value = $this->charsUntil(
                         TokenKind::Escaped,
@@ -280,6 +299,7 @@ final class Parser
                         TokenKind::DoubleQuote,
                         TokenKind::SingleQuote,
                         TokenKind::CloseBrace,
+                        TokenKind::ShellParameter,
                     );
                     self::pushValue($nodes, $value);
                     break;

@@ -11,9 +11,16 @@ final class Tokenizer
     private int $line = 1;
     private int $col = 0;
 
-    private const IDENT_RX = '/[A-Za-z_][A-Za-z0-9_]*/A';
-
     private const WS_RX = '/[ \t]+/A';
+    private const IDENT_RX = '/[A-Za-z_][A-Za-z0-9_]*/A';
+    private const SHELL_PARAM_RX = <<<'REGEXP'
+    /
+        \$
+        (?<brace> { )?
+        (?<param> [@*#?$!-] | \d+ )
+        (?(<brace>) } )
+    /Ax
+    REGEXP;
 
     /**
      * This pattern MUST NOT match any character that can start a token
@@ -51,6 +58,11 @@ final class Tokenizer
                 $token = $this->make(TokenKind::Newline, "\n");
                 $this->newline();
                 return $token;
+            case '$':
+                if ($token = $this->matchShellParameter()) {
+                    return $token;
+                }
+                return $this->make(TokenKind::Dollar, '$');
             default:
                 if ($kind = TokenKind::tryFromChar($cc)) {
                     return $this->make($kind, $cc);
@@ -68,6 +80,16 @@ final class Tokenizer
             return null;
         }
         $token = $this->make(TokenKind::Identifier, $m[0]);
+        $this->advance(\strlen($m[0]) - 1);
+        return $token;
+    }
+
+    private function matchShellParameter(): ?Token
+    {
+        if (!preg_match(self::SHELL_PARAM_RX, $this->input, $m, 0, $this->pos)) {
+            return null;
+        }
+        $token = $this->make(TokenKind::ShellParameter, $m[0]);
         $this->advance(\strlen($m[0]) - 1);
         return $token;
     }
