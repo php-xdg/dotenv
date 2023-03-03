@@ -161,6 +161,12 @@ final class Parser
                 case TokenKind::Dollar:
                     self::pushValue($nodes, $this->parsePossibleReference(true));
                     break;
+                case TokenKind::Special:
+                    if ($token->value === '`') {
+                        throw ParseError::at('Unsupported command expansion', $token);
+                    }
+                    self::pushValue($nodes, $token->value);
+                    break;
                 case TokenKind::Escaped:
                     $this->consume();
                     switch ($token->value) {
@@ -202,6 +208,13 @@ final class Parser
                 $op = $this->parseExpansionOperator();
                 $rhs = $this->parseExpansionArguments($quoted);
                 return new ComplexReference($id, $op, $rhs);
+            case TokenKind::Special:
+                switch ($token->value) {
+                    case '(':
+                        throw ParseError::at('Unsupported command or arithmetic expansion', $token);
+                    default:
+                        return new SimpleValue('$');
+                }
             default:
                 return new SimpleValue('$');
         }

@@ -7,6 +7,12 @@ use Xdg\Dotenv\Parser\TokenKind;
 
 final class ParseError extends \RuntimeException implements DotenvException
 {
+    public static function at(string $message, Token $token): self
+    {
+        $pos = " on line {$token->line}, column {$token->col}.";
+        return new self($message . $pos);
+    }
+
     public static function unexpectedToken(Token $token, TokenKind ...$expectedKinds): self
     {
         $message = sprintf(
