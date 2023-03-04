@@ -23,8 +23,8 @@ MUST NOT be supported AND result in a parse error:
 
 In conforming implementations, the following MUST NOT be performed:
 * [tilde expansion](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_01)
-* [field splitting](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_05)
 * [pathname expansion](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_06)
+* [field splitting](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_06_05)
 
 
 ## General definitions
@@ -201,11 +201,12 @@ Variable expansions some in two forms: simple expansions and complex expansions.
 Simple expansions start with a `$` character, followed by an [identifier](#assignment-expressions)
 optionally enclosed in curly braces.
 
-Here is an equivalent parsing expression grammar:
-
-```peg
-simple-expansion  <- "$" identifier / "${" identifer "}"
-identifier        <- [a-zA-Z_][a-zA-Z0-9_]*
+```sh
+FOO='foo'
+A=$FOO
+B="$FOO"
+C=${FOO}
+D="${FOO}"
 ```
 
 ### Complex expansions
@@ -216,3 +217,14 @@ The syntax of complex expansions is as follows:
 complex-expansion <- "${" identifer operator value? "}"
 operator          <- ":"? ( "-" / "+" / "=" / "?" )
 ```
+
+| expression    | `LHS` is set and not empty | `LHS` is set but empty | `LHS` is not set       |
+|---------------|----------------------------|------------------------|------------------------|
+| `${LHS:-rhs}` | use the value of `$LHS`    | use the value of `rhs` | use the value of `rhs` |
+| `${LHS-rhs}`  | use the value of `$LHS`    | use the empty string   | use the value of `rhs` |
+| `${LHS:=rhs}` | use the value of `$LHS`    | assign `rhs` to `LHS`  | assign `rhs` to `LHS`  |
+| `${LHS=rhs}`  | use the value of `$LHS`    | use the empty string   | assign `rhs` to `LHS`  |
+| `${LHS:?rhs}` | use the value of `$LHS`    | error                  | error                  |
+| `${LHS?rhs}`  | use the value of `$LHS`    | use the empty string   | error                  |
+| `${LHS:+rhs}` | use the value of `rhs`     | use the empty string   | use the empty string   |
+| `${LHS+rhs}`  | use the value of `rhs`     | use the value of `rhs` | use the empty string   |

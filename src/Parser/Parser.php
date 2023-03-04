@@ -14,8 +14,6 @@ use Xdg\Dotenv\Parser\Ast\SimpleValue;
 final class Parser
 {
     private Token $current;
-    private ?int $lastAssignmentLine = null;
-    private ?int $lastExportLine = null;
 
     public function __construct(
         private readonly Tokenizer $tokenizer,
@@ -37,7 +35,7 @@ final class Parser
 
     private function parseAssignment(): Assignment
     {
-        $name = $this->skipExportStatement();
+        $name = $this->expect(TokenKind::Identifier);
         $this->expect(TokenKind::Equal);
         switch ($this->current->kind) {
             case TokenKind::Whitespace:
@@ -330,24 +328,6 @@ final class Parser
         }
         $this->consume();
         return $token;
-    }
-
-    private function skipExportStatement(): Token
-    {
-        $name = $this->expect(TokenKind::Identifier);
-        if (strcasecmp('export', $name->value) === 0) {
-            if ($this->lastExportLine === $name->line) {
-                throw new ParseError("Multiple export statements on line {$name->line}");
-            }
-            if ($this->lastAssignmentLine === $name->line) {
-                throw new ParseError("Export statement must precede assignments on line {$name->line}");
-            }
-            $this->lastExportLine = $name->line;
-            $this->expect(TokenKind::Whitespace);
-            $name = $this->expect(TokenKind::Identifier);
-        }
-        $this->lastAssignmentLine = $name->line;
-        return $name;
     }
 
     private function skipWhitespaceAndComments(): void
