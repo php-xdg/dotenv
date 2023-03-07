@@ -75,6 +75,34 @@ final class Tokenizer
         }
     }
 
+    /**
+     * This method is called by the parser after encountering a single-quoted character,
+     * side-channeling the `next()` method for performance.
+     */
+    public function consumeSingleQuotedChars(): string
+    {
+        $value = '';
+        while (true) {
+            $this->advance();
+            switch ($this->input[$this->pos] ?? '') {
+                case '':
+                case "'":
+                    // unconsume the character so that it can be re-consumed in `next()`.
+                    $this->recede();
+                    return $value;
+                case "\n":
+                    $value .= "\n";
+                    $this->newline();
+                    break;
+                default:
+                    preg_match("/[^'\n]+/A", $this->input, $m, 0, $this->pos);
+                    $value .= $m[0];
+                    $this->advance(\strlen($m[0]) - 1);
+                    break;
+            }
+        }
+    }
+
     private function matchIdentifier(): ?Token
     {
         if (!preg_match(self::IDENT_RX, $this->input, $m, 0, $this->pos)) {
@@ -115,6 +143,12 @@ final class Tokenizer
     {
         $this->pos += $n;
         $this->col += $n;
+    }
+
+    private function recede(int $n = 1): void
+    {
+        $this->pos = \max(-1, $this->pos - $n);
+        $this->col = \max(0, $this->col - $n);
     }
 
     private function newline(): void

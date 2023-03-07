@@ -111,34 +111,18 @@ final class Parser
      */
     private function parseSingleQuotedString(): SimpleValue
     {
-        $start = $this->expect(TokenKind::SingleQuote);
-        $value = '';
-        while (true) {
-            $token = $this->current;
-            switch ($token->kind) {
-                case TokenKind::EOF:
-                    throw new ParseError(sprintf(
-                        'Unterminated single-quoted string on line %d, column %d',
-                        $start->line,
-                        $start->col,
-                    ));
-                case TokenKind::SingleQuote:
-                    $this->consume();
-                    return new SimpleValue($value);
-                case TokenKind::Escaped:
-                    $this->consume();
-                    if ($token->value === "'") {
-                        $value .= '\\';
-                        return new SimpleValue($value);
-                    }
-                    $value .= "\\{$token->value}";
-                    break;
-                default:
-                    $this->consume();
-                    $value .= $token->value;
-                    break;
-            }
+        $start = $this->current;
+        $value = $this->tokenizer->consumeSingleQuotedChars();
+        $this->consume();
+        if ($this->current->kind === TokenKind::EOF) {
+            throw new ParseError(sprintf(
+                'Unterminated single-quoted string on line %d, column %d',
+                $start->line,
+                $start->col,
+            ));
         }
+        $this->expect(TokenKind::SingleQuote);
+        return new SimpleValue($value);
     }
 
     /**
