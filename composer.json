@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "test": "XDEBUG_MODE=off tools/phpunit.phar",
-    "coverage": "XDEBUG_MODE=off php -dpcov.enabled=1 tools/phpunit.phar --coverage-html=tmp/coverage"
+    "coverage": "XDEBUG_MODE=off php -dpcov.enabled=1 tools/phpunit.phar --coverage-html=tmp/coverage",
+    "bench": "XDEBUG_MODE=off tools/phpbench.phar run --report=aggregate"
   },
   "autoload": {
     "psr-4": {
@@ -21,7 +22,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Xdg\\Dotenv\\Tests\\": "tests/"
+      "Xdg\\Dotenv\\Tests\\": "tests/",
+      "Xdg\\Dotenv\\Benchmarks\\": "bench/"
     }
   },
   "require": {

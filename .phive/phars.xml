@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phive xmlns="https://phar.io/phive">
   <phar name="phpunit" version="^10.0" location="./tools/phpunit.phar" copy="false" installed="10.0.7"/>
+  <phar name="phpbench" version="^1.2.8" installed="1.2.8" location="./tools/phpbench.phar" copy="false"/>
 </phive>
