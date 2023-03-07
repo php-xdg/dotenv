@@ -48,6 +48,7 @@ final class Tokenizer
                 if ($cn !== null) {
                     $token = $this->make(TokenKind::Escaped, $cn);
                     $this->advance();
+                    if ($cn === "\n") $this->newline();
                     return $token;
                 }
                 return $this->make(TokenKind::Characters, '\\');
