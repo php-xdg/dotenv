@@ -103,6 +103,31 @@ final class Tokenizer
         }
     }
 
+    public function skipWhitespaceAndComments(): void
+    {
+        while (true) {
+            $this->advance();
+            switch ($this->input[$this->pos] ?? '') {
+                case '':
+                    return;
+                case "\n";
+                    $this->newline();
+                    break;
+                case ' ':
+                case "\t":
+                    $this->pos += \strspn($this->input, " \t", $this->pos);
+                    break;
+                case '#':
+                    preg_match('/#[^\n]+/A', $this->input, $m, 0, $this->pos);
+                    $this->advance(\strlen($m[0]) - 1);
+                    break;
+                default:
+                    $this->recede();
+                    return;
+            }
+        }
+    }
+
     private function matchIdentifier(): ?Token
     {
         if (!preg_match(self::IDENT_RX, $this->input, $m, 0, $this->pos)) {

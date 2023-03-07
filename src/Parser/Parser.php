@@ -23,7 +23,6 @@ final class Parser
     public function parse(): AssignmentList
     {
         $nodes = [];
-        $this->consume();
         $this->skipWhitespaceAndComments();
         while ($this->current->kind !== TokenKind::EOF) {
             $nodes[] = $this->parseAssignment();
@@ -316,29 +315,8 @@ final class Parser
 
     private function skipWhitespaceAndComments(): void
     {
-        while (true) {
-            switch ($this->current->kind) {
-                case TokenKind::Whitespace:
-                case TokenKind::Newline:
-                    $this->consume();
-                    break;
-                case TokenKind::Hash:
-                    $this->skipUntil(TokenKind::Newline);
-                    break;
-                default:
-                    return;
-            };
-        }
-    }
-
-    private function skipUntil(TokenKind ...$until): void
-    {
-        while (true) {
-            if ($this->current->kind === TokenKind::EOF || \in_array($this->current->kind, $until, true)) {
-                return;
-            }
-            $this->consume();
-        }
+        $this->tokenizer->skipWhitespaceAndComments();
+        $this->consume();
     }
 
     private function charsUntil(TokenKind ...$until): string
