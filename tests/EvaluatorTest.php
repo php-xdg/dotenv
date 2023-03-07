@@ -35,7 +35,7 @@ final class EvaluatorTest extends TestCase
 
     public static function specFilesProvider(): iterable
     {
-        foreach (ResourceHelper::glob('portable/{syntax,expansion}/*.json') as $file) {
+        foreach (ResourceHelper::glob('portable/*/*.json') as $file) {
             $blob = file_get_contents($file);
             $dir = basename(dirname($file));
             $name = basename($file);

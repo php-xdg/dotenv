@@ -56,8 +56,8 @@ In other words, they MUST match the following regular expression:
 [a-zA-Z_][a-zA-Z0-9_]*
 ```
 
-Whitespace is not allowed between the `<indentifier>` and the equal sign,
-nor between the equal sign and the `<value>`.
+`<whitespace>` is not allowed between the `<indentifier>` and the equal sign.
+The `<value>` stops at the first `<whitespace>` or `<newline>` character that is neither escaped nor quoted.
 
 
 ## Assignment values

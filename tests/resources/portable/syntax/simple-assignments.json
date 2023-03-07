@@ -51,16 +51,17 @@
     "desc": "duplicated identifier => last value wins"
   },
   {
+    "input": "A= B=\nC=",
+    "expected": {
+      "A": "",
+      "B": "",
+      "C": ""
+    },
+    "desc": "whitespace or newline or EOF after equal sign ends the value"
+  },
+  {
     "input": "a= \"b\"",
     "error": "ParseError",
     "desc": "invalid whitespace after equal sign"
-  },
-  {
-    "input": "A=\nB=",
-    "expected": {
-      "A": "",
-      "B": ""
-    },
-    "desc": "newline or EOF after equal sign"
   }
 ]

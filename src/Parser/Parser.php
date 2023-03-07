@@ -38,11 +38,6 @@ final class Parser
         $this->expect(TokenKind::Equal);
         switch ($this->current->kind) {
             case TokenKind::Whitespace:
-                throw new ParseError(sprintf(
-                    'Whitespace after equal sign in assignment on line %d, column %d',
-                    $this->current->line,
-                    $this->current->col,
-                ));
             case TokenKind::Newline:
             case TokenKind::EOF:
                 return new Assignment($name->value, null);
