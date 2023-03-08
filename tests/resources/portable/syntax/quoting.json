@@ -10,6 +10,16 @@
     "desc": "Unterminated double-quoted string"
   },
   {
+    "input": "a='foo\\",
+    "error": "ParseError",
+    "desc": "Unterminated single-quoted string"
+  },
+  {
+    "input": "a=\"foo\\",
+    "error": "ParseError",
+    "desc": "Unterminated double-quoted string"
+  },
+  {
     "input": "a='0\\n1\\t2'",
     "expected": {
       "a": "0\\n1\\t2"

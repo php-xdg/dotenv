@@ -4,7 +4,7 @@ namespace Xdg\Dotenv\Parser;
 
 use Xdg\Dotenv\Exception\ParseError;
 
-final class Tokenizer
+final class Tokenizer implements TokenizerInterface
 {
     private int $pos = -1;
     private int $line = 1;
@@ -34,9 +34,6 @@ final class Tokenizer
     ) {
     }
 
-    /**
-     * @return \Iterator<int, Token>
-     */
     public function tokenize(): \Iterator
     {
         $this->states = new \SplStack();
@@ -126,11 +123,7 @@ final class Tokenizer
                         $this->state = TokenizerState::DoubleQuoted;
                         goto ADVANCE;
                     case '`':
-                        throw new ParseError(sprintf(
-                            'Unsupported command expansion on line %d, column %d',
-                            $this->line,
-                            $this->col,
-                        ));
+                        throw ParseError::at('Unsupported command expansion', $this->line, $this->col);
                     case '|':
                     case '&':
                     case ';':
@@ -138,12 +131,7 @@ final class Tokenizer
                     case '>':
                     case '(':
                     case ')':
-                        throw new ParseError(sprintf(
-                            'Unescaped special character "%s" in unquoted value on line %d, column %d',
-                            $cc,
-                            $this->line,
-                            $this->col,
-                        ));
+                        throw ParseError::at("Unescaped special character '{$cc}'", $this->line, $this->col);
                     case '$':
                         $this->flushBuffer();
                         $this->states->push($this->state);
@@ -162,11 +150,7 @@ final class Tokenizer
             SINGLE_QUOTED: {
                 switch ($cc) {
                     case '':
-                        throw new ParseError(sprintf(
-                            'Unterminated single-quoted string on line %d, column %d',
-                            $this->buffer->line,
-                            $this->buffer->col,
-                        ));
+                        throw ParseError::at('Unterminated single-quoted string', $this->buffer->line, $this->buffer->col);
                     case "'":
                         $this->state = $this->states->pop();
                         $this->flushBuffer();
@@ -190,11 +174,7 @@ final class Tokenizer
                 $this->quoted = true;
                 switch ($cc) {
                     case '':
-                        throw new ParseError(sprintf(
-                            'Unterminated double-quoted string on line %d, column %d',
-                            $this->buffer->line,
-                            $this->buffer->col,
-                        ));
+                        throw ParseError::at('Unterminated double-quoted string', $this->buffer->line, $this->buffer->col);
                     case '"':
                         $this->state = $this->states->pop();
                         $this->flushBuffer();
@@ -226,11 +206,7 @@ final class Tokenizer
                                 goto ADVANCE;
                         }
                     case '`':
-                        throw new ParseError(sprintf(
-                            'Unsupported command expansion on line %d, column %d',
-                            $this->line,
-                            $this->col,
-                        ));
+                        throw ParseError::at('Unsupported command expansion', $this->line, $this->col);
                     case '$':
                         $this->flushBuffer();
                         $this->states->push($this->state);
@@ -265,11 +241,7 @@ final class Tokenizer
                         $this->flushBuffer();
                         return false;
                     case '(':
-                        throw new ParseError(sprintf(
-                            'Unsupported command or arithmetic expansion on line %d, column %d',
-                            $this->line,
-                            $this->col,
-                        ));
+                        throw ParseError::at('Unsupported command or arithmetic expansion', $this->line, $this->col);
                     case '{':
                         $this->state = TokenizerState::AfterDollarOpenBrace;
                         goto ADVANCE;
@@ -305,11 +277,7 @@ final class Tokenizer
             EXPANSION_ARGUMENTS: {
                 switch ($cc) {
                     case '':
-                        throw new ParseError(sprintf(
-                            'Unterminated expansion on line %d, column %d',
-                            $this->line,
-                            $this->col,
-                        ));
+                        throw ParseError::at('Unterminated expansion', $this->line, $this->col);
                     case '}';
                         $token = new Token(TokenKind::CloseBrace, '}', $this->line, $this->col);
                         $this->queue->enqueue($token);
@@ -331,11 +299,7 @@ final class Tokenizer
                                 return true;
                         }
                     case '`':
-                        throw new ParseError(sprintf(
-                            'Unsupported command expansion on line %d, column %d',
-                            $this->line,
-                            $this->col,
-                        ));
+                        throw ParseError::at('Unsupported command expansion', $this->line, $this->col);
                     case "'":
                         $this->flushBuffer();
                         if ($this->quoted) {
@@ -373,12 +337,11 @@ final class Tokenizer
             return null;
         }
         if ($m['special'] !== null) {
-            throw new ParseError(sprintf(
-                'Unsupported shell special parameter "%s" on line %d, column %d',
-                $m['special'],
+            throw ParseError::at(
+                "Unsupported special shell parameter: {$m['special']}",
                 $this->line,
                 $this->col,
-            ));
+            );
         }
         $token = new Token(TokenKind::SimpleExpansion, $m['identifier'], $this->line, $this->col);
         $this->advance(\strlen($m[0]) - 1);

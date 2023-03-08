@@ -5,6 +5,11 @@
     "desc": "Missing closing brace in expansion arguments"
   },
   {
+    "input": "a=${foo-\\",
+    "error": "ParseError",
+    "desc": "Missing closing brace in expansion arguments"
+  },
+  {
     "input": "a=${a:-0} b=${b:-} c=${c:-1}",
     "expected": {
       "a": "42",
@@ -38,7 +43,7 @@
     "desc": ":- operator supports recursive expansion"
   },
   {
-    "input": "a=${a:=foo} b=$a",
+    "input": "a=${a:=foo} b=${b:-$a}",
     "expected": {
       "a": "foo",
       "b": "foo"

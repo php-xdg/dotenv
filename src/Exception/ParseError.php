@@ -7,9 +7,9 @@ use Xdg\Dotenv\Parser\TokenKind;
 
 final class ParseError extends \RuntimeException implements DotenvException
 {
-    public static function at(string $message, Token $token): self
+    public static function at(string $message, int $line, int $col): self
     {
-        $pos = " on line {$token->line}, column {$token->col}.";
+        $pos = " on line {$line}, column {$col}.";
         return new self($message . $pos);
     }
 

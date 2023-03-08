@@ -19,7 +19,7 @@ final class Parser
     private readonly \Iterator $tokens;
 
     public function __construct(
-        private readonly Tokenizer $tokenizer,
+        private readonly TokenizerInterface $tokenizer,
     ) {
     }
 
@@ -86,8 +86,6 @@ final class Parser
         while (true) {
             $token = $this->tokens->current();
             switch ($token->kind) {
-                case TokenKind::EOF:
-                    throw ParseError::unexpectedToken($token);
                 case TokenKind::CloseBrace:
                     $this->tokens->next();
                     return self::createValue($nodes);
