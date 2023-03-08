@@ -25,7 +25,7 @@ final class ParseError extends \RuntimeException implements DotenvException
         $message .= match (\count($expectedKinds)) {
             0 => '',
             1 => ', expected: ' . $expectedKinds[0]->name,
-            default => 'expected one of: ' . implode(', ', array_map(fn($k) => $k->name, $expectedKinds)),
+            default => ', expected one of: ' . implode(', ', array_map(fn($k) => $k->name, $expectedKinds)),
         };
 
         return new self($message);

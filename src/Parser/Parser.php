@@ -268,6 +268,13 @@ final class Parser
                         sprintf('Reserved shell parameter "%s" in expansion', $token->value),
                         $token,
                     );
+                case TokenKind::Special:
+                    if ($token->value === '`') {
+                        throw ParseError::at('Unsupported command expansion', $token);
+                    }
+                    $this->consume();
+                    self::pushValue($nodes, $token->value);
+                    break;
                 default:
                     $value = $this->charsUntil(
                         TokenKind::Escaped,
@@ -276,6 +283,7 @@ final class Parser
                         TokenKind::SingleQuote,
                         TokenKind::CloseBrace,
                         TokenKind::ShellParameter,
+                        TokenKind::Special,
                     );
                     self::pushValue($nodes, $value);
                     break;
