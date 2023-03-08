@@ -12,7 +12,7 @@ final class Tokenizer
     private Buffer $buffer;
     private bool $quoted = false;
 
-    /** @var \SplQueue<Token>  */
+    /** @var \SplQueue<Token> */
     private \SplQueue $queue;
     private \SplStack $states;
 
@@ -41,13 +41,13 @@ final class Tokenizer
     {
         $this->states = new \SplStack();
         $this->queue = new \SplQueue();
-        $this->queue->setIteratorMode(\SplDoublyLinkedList::IT_MODE_DELETE|\SplDoublyLinkedList::IT_MODE_FIFO);
+        $this->queue->setIteratorMode(\SplDoublyLinkedList::IT_MODE_DELETE | \SplDoublyLinkedList::IT_MODE_FIFO);
         $this->buffer = new Buffer($this->line, $this->col);
         do {
             $carryOn = $this->next();
             yield from $this->queue;
         } while ($carryOn);
-        yield $this->make(TokenKind::EOF, '');
+        yield new Token(TokenKind::EOF, '', $this->line, $this->col);
     }
 
     private function next(): bool
@@ -74,7 +74,7 @@ final class Tokenizer
                         goto RECONSUME;
                     default:
                         if (preg_match('/([a-zA-Z_][a-zA-Z0-9_]*)=/A', $this->input, $m, 0, $this->pos)) {
-                            $token = $this->make(TokenKind::Assign, $m[1]);
+                            $token = new Token(TokenKind::Assign, $m[1], $this->line, $this->col);
                             $this->advance(\strlen($m[0]) - 1);
                             $this->state = TokenizerState::Unquoted;
                             $this->queue->enqueue($token);
@@ -152,12 +152,12 @@ final class Tokenizer
                     default:
                         $this->flushBuffer();
                         preg_match('/[^\\\\ \t\n\'"`$|&;<>()]+/A', $this->input, $m, 0, $this->pos);
-                        $token = $this->make(TokenKind::Characters, $m[0]);
+                        $token = new Token(TokenKind::Characters, $m[0], $this->line, $this->col);
                         $this->advance(\strlen($m[0]) - 1);
                         $this->queue->enqueue($token);
                         return true;
                 }
-            } break;
+            }
             case TokenizerState::SingleQuoted:
             SINGLE_QUOTED: {
                 switch ($cc) {
@@ -173,13 +173,16 @@ final class Tokenizer
                         return true;
                     case "\n":
                         $this->buffer->value .= "\n";
+                        $this->advance();
                         $this->newline();
-                        goto ADVANCE;
+                        $cc = $this->input[$this->pos] ?? '';
+                        goto SINGLE_QUOTED;
                     default:
                         preg_match("/[^'\n]+/A", $this->input, $m, 0, $this->pos);
                         $this->buffer->value .= $m[0];
                         $this->advance(\strlen($m[0]));
-                        goto RECONSUME;
+                        $cc = $this->input[$this->pos] ?? '';
+                        goto SINGLE_QUOTED;
                 }
             }
             case TokenizerState::DoubleQuoted:
@@ -198,8 +201,10 @@ final class Tokenizer
                         return true;
                     case "\n":
                         $this->buffer->value .= "\n";
+                        $this->advance();
                         $this->newline();
-                        goto ADVANCE;
+                        $cc = $this->input[$this->pos] ?? '';
+                        goto DOUBLE_QUOTED;
                     case '\\':
                         $cn = $this->input[$this->pos + 1] ?? '';
                         switch ($cn) {
@@ -236,9 +241,10 @@ final class Tokenizer
                         preg_match('/[^\\\\"`\n$]+/A', $this->input, $m, 0, $this->pos);
                         $this->buffer->value .= $m[0];
                         $this->advance(\strlen($m[0]));
-                        goto RECONSUME;
+                        $cc = $this->input[$this->pos] ?? '';
+                        goto DOUBLE_QUOTED;
                 }
-            } break;
+            }
             case TokenizerState::Dollar:
             DOLLAR: {
                 if ($token = $this->matchSimpleExpansion()) {
@@ -250,7 +256,7 @@ final class Tokenizer
                 }
                 $this->state = TokenizerState::AfterDollar;
                 goto ADVANCE;
-            } break;
+            }
             case TokenizerState::AfterDollar:
             AFTER_DOLLAR: {
                 switch ($cc) {
@@ -272,24 +278,24 @@ final class Tokenizer
                         $this->state = $this->states->pop();
                         goto RECONSUME;
                 }
-            } break;
+            }
             case TokenizerState::AfterDollarOpenBrace:
             AFTER_DOLLAR_OPEN_BRACE: {
                 if (!preg_match('/[a-zA-Z_][a-zA-Z0-9_]*/A', $this->input, $m, 0, $this->pos)) {
                     throw $this->unexpectedChar($cc, 'Expected an identifier');
                 }
-                $token = $this->make(TokenKind::ComplexExpansion, $m[0]);
+                $token = new Token(TokenKind::ComplexExpansion, $m[0], $this->line, $this->col);
                 $this->queue->enqueue($token);
                 $this->advance(\strlen($m[0]));
                 $this->state = TokenizerState::AfterExpansionIdentifier;
                 goto RECONSUME;
-            } break;
+            }
             case TokenizerState::AfterExpansionIdentifier:
             AFTER_EXPANSION_IDENTIFIER: {
                 if (!preg_match('/:?[?=+-]/A', $this->input, $m, 0, $this->pos)) {
                     throw $this->unexpectedChar($cc, 'Expected an expansion operator');
                 }
-                $token = $this->make(TokenKind::ExpansionOperator, $m[0]);
+                $token = new Token(TokenKind::ExpansionOperator, $m[0], $this->line, $this->col);
                 $this->queue->enqueue($token);
                 $this->advance(\strlen($m[0]) - 1);
                 $this->state = TokenizerState::ExpansionArguments;
@@ -305,7 +311,7 @@ final class Tokenizer
                             $this->col,
                         ));
                     case '}';
-                        $token = $this->make(TokenKind::CloseBrace, '}');
+                        $token = new Token(TokenKind::CloseBrace, '}', $this->line, $this->col);
                         $this->queue->enqueue($token);
                         $this->state = $this->states->pop();
                         goto ADVANCE;
@@ -320,11 +326,8 @@ final class Tokenizer
                                 goto ADVANCE;
                             default:
                                 $this->advance();
-                                if ($this->quoted) {
-                                    $this->queue->enqueue($this->make(TokenKind::Characters, "\\{$cn}"));
-                                    return true;
-                                }
-                                $this->queue->enqueue($this->make(TokenKind::Characters, $cn));
+                                $value = $this->quoted ? "\\{$cn}" : $cn;
+                                $this->queue->enqueue(new Token(TokenKind::Characters, $value, $this->line, $this->col));
                                 return true;
                         }
                     case '`':
@@ -336,7 +339,7 @@ final class Tokenizer
                     case "'":
                         $this->flushBuffer();
                         if ($this->quoted) {
-                            $this->queue->enqueue($this->make(TokenKind::Characters, "'"));
+                            $this->queue->enqueue(new Token(TokenKind::Characters, "'", $this->line, $this->col));
                             return true;
                         }
                         $this->states->push($this->state);
@@ -355,12 +358,11 @@ final class Tokenizer
                     default:
                         $this->flushBuffer();
                         preg_match('/[^\\\\}$"`\']+/A', $this->input, $m, 0, $this->pos);
-                        $token = $this->make(TokenKind::Characters, $m[0]);
+                        $token = new Token(TokenKind::Characters, $m[0], $this->line, $this->col);
                         $this->advance(\strlen($m[0]) - 1);
                         $this->queue->enqueue($token);
-                        return true;
                 }
-            } break;
+            }
         }
         return true;
     }
@@ -391,11 +393,6 @@ final class Tokenizer
         $this->buffer->value = '';
         $this->buffer->line = $this->line;
         $this->buffer->col = $this->col;
-    }
-
-    private function make(TokenKind $kind, string $value): Token
-    {
-        return new Token($kind, $value, $this->line, $this->col);
     }
 
     private function advance(int $n = 1): void

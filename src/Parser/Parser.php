@@ -56,15 +56,15 @@ final class Parser
                 case TokenKind::Assign:
                     return self::createValue($nodes);
                 case TokenKind::Characters:
-                    $this->consume();
+                    $this->tokens->next();
                     $nodes[] = new SimpleValue($token->value);
                     break;
                 case TokenKind::SimpleExpansion:
-                    $this->consume();
+                    $this->tokens->next();
                     $nodes[] = new SimpleReference($token->value);
                     break;
                 case TokenKind::ComplexExpansion:
-                    $this->consume();
+                    $this->tokens->next();
                     $op = $this->expect(TokenKind::ExpansionOperator)->value;
                     $rhs = $this->parseExpansionArguments();
                     $nodes[] = new ComplexReference($token->value, ExpansionOperator::from($op), $rhs);
@@ -89,18 +89,18 @@ final class Parser
                 case TokenKind::EOF:
                     throw ParseError::unexpectedToken($token);
                 case TokenKind::CloseBrace:
-                    $this->consume();
+                    $this->tokens->next();
                     return self::createValue($nodes);
                 case TokenKind::Characters:
-                    $this->consume();
+                    $this->tokens->next();
                     $nodes[] = new SimpleValue($token->value);
                     break;
                 case TokenKind::SimpleExpansion:
-                    $this->consume();
+                    $this->tokens->next();
                     $nodes[] = new SimpleReference($token->value);
                     break;
                 case TokenKind::ComplexExpansion:
-                    $this->consume();
+                    $this->tokens->next();
                     $op = $this->expect(TokenKind::ExpansionOperator)->value;
                     $rhs = $this->parseExpansionArguments();
                     $nodes[] = new ComplexReference($token->value, ExpansionOperator::from($op), $rhs);
@@ -126,18 +126,13 @@ final class Parser
         };
     }
 
-    private function consume(): void
-    {
-        $this->tokens->next();
-    }
-
     private function expect(TokenKind $kind): Token
     {
         $token = $this->tokens->current();
         if ($token->kind !== $kind) {
             throw ParseError::unexpectedToken($token, $kind);
         }
-        $this->consume();
+        $this->tokens->next();
         return $token;
     }
 }
