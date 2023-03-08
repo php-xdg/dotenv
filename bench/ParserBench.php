@@ -12,13 +12,13 @@ use Xdg\Dotenv\Parser\Parser;
 use Xdg\Dotenv\Parser\Tokenizer;
 
 #[RetryThreshold(2.0)]
+#[Iterations(10)]
+#[Revs(100)]
+#[OutputMode('throughput')]
+#[OutputTimeUnit('seconds')]
 final class ParserBench
 {
     #[Subject]
-    #[Iterations(10)]
-    #[Revs(100)]
-    #[OutputMode('throughput')]
-    #[OutputTimeUnit('seconds')]
     public function parse(): void
     {
         $input = file_get_contents(__DIR__.'/resources/big.env');
