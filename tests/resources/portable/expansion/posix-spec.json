@@ -7,7 +7,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute parameter"
+    "desc": ":- parameter is set and not null => substitute parameter"
   },
   {
     "input": "result=${parameter:-word}",
@@ -17,14 +17,14 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => substitute word"
+    "desc": ":- parameter is set but null => substitute word"
   },
   {
     "input": "result=${parameter:-word}",
     "expected": {
       "result": "word"
     },
-    "desc": "parameter is unset => substitute word"
+    "desc": ":- parameter is unset => substitute word"
   },
   {
     "input": "result=${parameter-word}",
@@ -34,7 +34,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute parameter"
+    "desc": "- parameter is set and not null => substitute parameter"
   },
   {
     "input": "result=${parameter-word}",
@@ -44,14 +44,14 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => substitute null"
+    "desc": "- parameter is set but null => substitute null"
   },
   {
     "input": "result=${parameter-word}",
     "expected": {
       "result": "word"
     },
-    "desc": "parameter is unset => substitute word"
+    "desc": "- parameter is unset => substitute word"
   },
   {
     "input": "result=${parameter:=word}",
@@ -61,7 +61,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute parameter"
+    "desc": ":= parameter is set and not null => substitute parameter"
   },
   {
     "input": "result=${parameter:=word}",
@@ -72,7 +72,7 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => assign word"
+    "desc": ":= parameter is set but null => assign word"
   },
   {
     "input": "result=${parameter:=word}",
@@ -80,7 +80,7 @@
       "result": "word",
       "parameter": "word"
     },
-    "desc": "parameter is unset => assign word"
+    "desc": ":= parameter is unset => assign word"
   },
   {
     "input": "result=${parameter=word}",
@@ -90,7 +90,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute parameter"
+    "desc": "= parameter is set and not null => substitute parameter"
   },
   {
     "input": "result=${parameter=word}",
@@ -100,7 +100,7 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => substitute null"
+    "desc": "= parameter is set but null => substitute null"
   },
   {
     "input": "result=${parameter=word}",
@@ -108,7 +108,7 @@
       "result": "word",
       "parameter": "word"
     },
-    "desc": "parameter is unset => assign word"
+    "desc": "= parameter is unset => assign word"
   },
   {
     "input": "result=${parameter:?word}",
@@ -118,7 +118,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute parameter"
+    "desc": ":? parameter is set and not null => substitute parameter"
   },
   {
     "input": "result=${parameter:?word}",
@@ -126,12 +126,12 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => error"
+    "desc": ":? parameter is set but null => error"
   },
   {
     "input": "result=${parameter:?word}",
     "error": "UndefinedVariable",
-    "desc": "parameter is unset => error"
+    "desc": ":? parameter is unset => error"
   },
   {
     "input": "result=${parameter?word}",
@@ -141,7 +141,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute parameter"
+    "desc": "? parameter is set and not null => substitute parameter"
   },
   {
     "input": "result=${parameter?word}",
@@ -151,12 +151,12 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => substitute null"
+    "desc": "? parameter is set but null => substitute null"
   },
   {
     "input": "result=${parameter?word}",
     "error": "UndefinedVariable",
-    "desc": "parameter is unset => error"
+    "desc": "? parameter is unset => error"
   },
   {
     "input": "result=${parameter:+word}",
@@ -166,7 +166,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute word"
+    "desc": ":+ parameter is set and not null => substitute word"
   },
   {
     "input": "result=${parameter:+word}",
@@ -176,14 +176,14 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => substitute null"
+    "desc": ":+ parameter is set but null => substitute null"
   },
   {
     "input": "result=${parameter:+word}",
     "expected": {
       "result": ""
     },
-    "desc": "parameter is unset => substitue null"
+    "desc": ":+ parameter is unset => substitue null"
   },
   {
     "input": "result=${parameter+word}",
@@ -193,7 +193,7 @@
     "scope": {
       "parameter": "ok"
     },
-    "desc": "parameter is set and not null => substitute word"
+    "desc": "+ parameter is set and not null => substitute word"
   },
   {
     "input": "result=${parameter+word}",
@@ -203,13 +203,13 @@
     "scope": {
       "parameter": ""
     },
-    "desc": "parameter is set but null => substitute word"
+    "desc": "+ parameter is set but null => substitute word"
   },
   {
     "input": "result=${parameter+word}",
     "expected": {
       "result": ""
     },
-    "desc": "parameter is unset => substitue null"
+    "desc": "+ parameter is unset => substitue null"
   }
 ]
