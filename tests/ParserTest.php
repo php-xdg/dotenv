@@ -7,19 +7,18 @@ use PHPUnit\Framework\TestCase;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\Parser;
 use Xdg\Dotenv\Parser\Token;
-use Xdg\Dotenv\Parser\TokenizerInterface;
 use Xdg\Dotenv\Parser\TokenKind;
+use Xdg\Dotenv\Tests\Utils\MockTokenizer;
 
 final class ParserTest extends TestCase
 {
     #[DataProvider('parseErrorsProvider')]
     public function testParseErrors(array $tokens): void
     {
-        $tokenizer = $this->createMock(TokenizerInterface::class);
-        $tokenizer->method('tokenize')->willReturnCallback(static function() use ($tokens) {
-            yield from $tokens;
-            yield new Token(TokenKind::EOF, '', -1, -1);
-        });
+        $tokenizer = new MockTokenizer([
+            ...$tokens,
+            new Token(TokenKind::EOF, '', -1),
+        ]);
         $parser = new Parser($tokenizer);
         $this->expectException(ParseError::class);
         $parser->parse();
@@ -29,23 +28,23 @@ final class ParserTest extends TestCase
     {
         yield 'unexpected token in assignment value' => [
             [
-                new Token(TokenKind::Assign, 'foo', 0, 0),
-                new Token(TokenKind::ExpansionOperator, 'foo', 0, 0),
+                new Token(TokenKind::Assign, 'foo', 0),
+                new Token(TokenKind::ExpansionOperator, '-', 0),
             ],
         ];
         yield 'unexpected token in expansion operator' => [
             [
-                new Token(TokenKind::Assign, 'foo', 0, 0),
-                new Token(TokenKind::ComplexExpansion, 'foo', 0, 0),
-                new Token(TokenKind::Assign, 'bar', 0, 0),
+                new Token(TokenKind::Assign, 'foo', 0),
+                new Token(TokenKind::ComplexExpansion, 'foo', 0),
+                new Token(TokenKind::Assign, 'bar', 0),
             ],
         ];
         yield 'unexpected token in expansion arguments' => [
             [
-                new Token(TokenKind::Assign, 'foo', 0, 0),
-                new Token(TokenKind::ComplexExpansion, 'foo', 0, 0),
-                new Token(TokenKind::ExpansionOperator, ':-', 0, 0),
-                new Token(TokenKind::Assign, 'bar', 0, 0),
+                new Token(TokenKind::Assign, 'foo', 0),
+                new Token(TokenKind::ComplexExpansion, 'foo', 0),
+                new Token(TokenKind::ExpansionOperator, ':-', 0),
+                new Token(TokenKind::Assign, 'bar', 0),
             ],
         ];
     }

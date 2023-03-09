@@ -72,6 +72,7 @@ final class Parser
                 default:
                     throw ParseError::unexpectedToken(
                         $token,
+                        $this->tokenizer->getPosition($token->offset),
                         TokenKind::Characters,
                         TokenKind::SimpleExpansion,
                         TokenKind::ComplexExpansion,
@@ -106,6 +107,7 @@ final class Parser
                 default:
                     throw ParseError::unexpectedToken(
                         $token,
+                        $this->tokenizer->getPosition($token->offset),
                         TokenKind::Characters,
                         TokenKind::SimpleExpansion,
                         TokenKind::ComplexExpansion,
@@ -128,7 +130,7 @@ final class Parser
     {
         $token = $this->tokens->current();
         if ($token->kind !== $kind) {
-            throw ParseError::unexpectedToken($token, $kind);
+            throw ParseError::unexpectedToken($token, $this->tokenizer->getPosition($token->offset), $kind);
         }
         $this->tokens->next();
         return $token;

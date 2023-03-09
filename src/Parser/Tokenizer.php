@@ -7,8 +7,6 @@ use Xdg\Dotenv\Exception\ParseError;
 final class Tokenizer implements TokenizerInterface
 {
     private int $pos = -1;
-    private int $line = 1;
-    private int $col = 0;
     private Buffer $buffer;
     private bool $quoted = false;
 
@@ -34,23 +32,28 @@ final class Tokenizer implements TokenizerInterface
     ) {
     }
 
+    public function getPosition(int $offset): SourcePosition
+    {
+        return SourcePosition::fromOffset($this->input, $offset);
+    }
+
     public function tokenize(): \Iterator
     {
         $this->states = new \SplStack();
         $this->queue = new \SplQueue();
         $this->queue->setIteratorMode(\SplDoublyLinkedList::IT_MODE_DELETE | \SplDoublyLinkedList::IT_MODE_FIFO);
-        $this->buffer = new Buffer($this->line, $this->col);
+        $this->buffer = new Buffer(0);
         do {
             $carryOn = $this->next();
             yield from $this->queue;
         } while ($carryOn);
-        yield new Token(TokenKind::EOF, '', $this->line, $this->col);
+        yield new Token(TokenKind::EOF, '', $this->pos);
     }
 
     private function next(): bool
     {
         ADVANCE:
-        $this->advance();
+        ++$this->pos;
         RECONSUME:
         $cc = $this->input[$this->pos] ?? '';
         switch ($this->state) {
@@ -61,18 +64,16 @@ final class Tokenizer implements TokenizerInterface
                         return false;
                     case ' ':
                     case "\t":
-                        $this->advance(\strspn($this->input, " \t", $this->pos));
-                        goto RECONSUME;
                     case "\n":
-                        $this->newline();
-                        goto ADVANCE;
+                        $this->pos += \strspn($this->input, " \t\n", $this->pos);
+                        goto RECONSUME;
                     case '#':
-                        $this->advance(\strcspn($this->input, "\n", $this->pos));
+                        $this->pos += \strcspn($this->input, "\n", $this->pos);
                         goto RECONSUME;
                     default:
                         if (preg_match('/([a-zA-Z_][a-zA-Z0-9_]*)=/A', $this->input, $m, 0, $this->pos)) {
-                            $token = new Token(TokenKind::Assign, $m[1], $this->line, $this->col);
-                            $this->advance(\strlen($m[0]) - 1);
+                            $token = new Token(TokenKind::Assign, $m[1], $this->pos);
+                            $this->pos += \strlen($m[0]) - 1;
                             $this->state = TokenizerState::AssignmentValue;
                             $this->queue->enqueue($token);
                             return true;
@@ -89,15 +90,11 @@ final class Tokenizer implements TokenizerInterface
                         return false;
                     case ' ':
                     case "\t":
-                        $this->flushBuffer();
-                        $this->advance(\strspn($this->input, " \t", $this->pos));
-                        $this->state = TokenizerState::AssignmentList;
-                        goto RECONSUME;
                     case "\n":
                         $this->flushBuffer();
-                        $this->newline();
+                        $this->pos += \strspn($this->input, " \t\n", $this->pos);
                         $this->state = TokenizerState::AssignmentList;
-                        goto ADVANCE;
+                        goto RECONSUME;
                     case '\\':
                         $cn = $this->input[$this->pos + 1] ?? null;
                         if ($cn === null) {
@@ -105,9 +102,8 @@ final class Tokenizer implements TokenizerInterface
                             $this->flushBuffer();
                             return true;
                         }
-                        $this->advance();
+                        ++$this->pos;
                         if ($cn === "\n") {
-                            $this->newline();
                             goto ADVANCE;
                         }
                         $this->buffer->value .= $cn;
@@ -123,7 +119,7 @@ final class Tokenizer implements TokenizerInterface
                         $this->state = TokenizerState::DoubleQuoted;
                         goto ADVANCE;
                     case '`':
-                        throw ParseError::at('Unsupported command expansion', $this->line, $this->col);
+                        throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case '|':
                     case '&':
                     case ';':
@@ -131,7 +127,7 @@ final class Tokenizer implements TokenizerInterface
                     case '>':
                     case '(':
                     case ')':
-                        throw ParseError::at("Unescaped special character '{$cc}'", $this->line, $this->col);
+                        throw ParseError::at("Unescaped special character '{$cc}'", $this->input, $this->pos);
                     case '$':
                         $this->flushBuffer();
                         $this->states->push($this->state);
@@ -140,8 +136,8 @@ final class Tokenizer implements TokenizerInterface
                     default:
                         $this->flushBuffer();
                         preg_match('/[^\\\\ \t\n\'"`$|&;<>()]+/A', $this->input, $m, 0, $this->pos);
-                        $token = new Token(TokenKind::Characters, $m[0], $this->line, $this->col);
-                        $this->advance(\strlen($m[0]) - 1);
+                        $token = new Token(TokenKind::Characters, $m[0], $this->pos);
+                        $this->pos += \strlen($m[0]) - 1;
                         $this->queue->enqueue($token);
                         return true;
                 }
@@ -150,21 +146,15 @@ final class Tokenizer implements TokenizerInterface
             SINGLE_QUOTED: {
                 switch ($cc) {
                     case '':
-                        throw ParseError::at('Unterminated single-quoted string', $this->buffer->line, $this->buffer->col);
+                        throw ParseError::at('Unterminated single-quoted string', $this->input, $this->buffer->offset);
                     case "'":
                         $this->state = $this->states->pop();
                         $this->flushBuffer();
                         return true;
-                    case "\n":
-                        $this->buffer->value .= "\n";
-                        $this->advance();
-                        $this->newline();
-                        $cc = $this->input[$this->pos] ?? '';
-                        goto SINGLE_QUOTED;
                     default:
-                        preg_match("/[^'\n]+/A", $this->input, $m, 0, $this->pos);
+                        preg_match("/[^']+/A", $this->input, $m, 0, $this->pos);
                         $this->buffer->value .= $m[0];
-                        $this->advance(\strlen($m[0]));
+                        $this->pos += \strlen($m[0]);
                         $cc = $this->input[$this->pos] ?? '';
                         goto SINGLE_QUOTED;
                 }
@@ -174,40 +164,33 @@ final class Tokenizer implements TokenizerInterface
                 $this->quoted = true;
                 switch ($cc) {
                     case '':
-                        throw ParseError::at('Unterminated double-quoted string', $this->buffer->line, $this->buffer->col);
+                        throw ParseError::at('Unterminated double-quoted string', $this->input, $this->buffer->offset);
                     case '"':
                         $this->state = $this->states->pop();
                         $this->flushBuffer();
                         return true;
-                    case "\n":
-                        $this->buffer->value .= "\n";
-                        $this->advance();
-                        $this->newline();
-                        $cc = $this->input[$this->pos] ?? '';
-                        goto DOUBLE_QUOTED;
                     case '\\':
                         $cn = $this->input[$this->pos + 1] ?? '';
                         switch ($cn) {
                             case '':
                                 goto ADVANCE;
                             case "\n":
-                                $this->advance();
-                                $this->newline();
+                                ++$this->pos;
                                 goto ADVANCE;
                             case '"':
                             case '$':
                             case '`':
                             case '\\':
-                                $this->advance();
+                                ++$this->pos;
                                 $this->buffer->value .= $cn;
                                 goto ADVANCE;
                             default:
-                                $this->advance();
+                                ++$this->pos;
                                 $this->buffer->value .= '\\' . $cn;
                                 goto ADVANCE;
                         }
                     case '`':
-                        throw ParseError::at('Unsupported command expansion', $this->line, $this->col);
+                        throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case '$':
                         $this->flushBuffer();
                         $this->states->push($this->state);
@@ -215,9 +198,9 @@ final class Tokenizer implements TokenizerInterface
                         goto DOLLAR;
 
                     default:
-                        preg_match('/[^\\\\"`\n$]+/A', $this->input, $m, 0, $this->pos);
+                        preg_match('/[^\\\\"`$]+/A', $this->input, $m, 0, $this->pos);
                         $this->buffer->value .= $m[0];
-                        $this->advance(\strlen($m[0]));
+                        $this->pos += \strlen($m[0]);
                         $cc = $this->input[$this->pos] ?? '';
                         goto DOUBLE_QUOTED;
                 }
@@ -242,7 +225,7 @@ final class Tokenizer implements TokenizerInterface
                         $this->flushBuffer();
                         return false;
                     case '(':
-                        throw ParseError::at('Unsupported command or arithmetic expansion', $this->line, $this->col);
+                        throw ParseError::at('Unsupported command or arithmetic expansion', $this->input, $this->pos);
                     case '{':
                         $this->state = TokenizerState::AfterDollarOpenBrace;
                         goto ADVANCE;
@@ -257,9 +240,9 @@ final class Tokenizer implements TokenizerInterface
                 if (!preg_match('/[a-zA-Z_][a-zA-Z0-9_]*/A', $this->input, $m, 0, $this->pos)) {
                     throw $this->unexpectedChar($cc, 'Expected an identifier');
                 }
-                $token = new Token(TokenKind::ComplexExpansion, $m[0], $this->line, $this->col);
+                $token = new Token(TokenKind::ComplexExpansion, $m[0], $this->pos);
                 $this->queue->enqueue($token);
-                $this->advance(\strlen($m[0]));
+                $this->pos += \strlen($m[0]);
                 $this->state = TokenizerState::AfterExpansionIdentifier;
                 goto RECONSUME;
             }
@@ -268,9 +251,9 @@ final class Tokenizer implements TokenizerInterface
                 if (!preg_match('/:?[?=+-]/A', $this->input, $m, 0, $this->pos)) {
                     throw $this->unexpectedChar($cc, 'Expected an expansion operator');
                 }
-                $token = new Token(TokenKind::ExpansionOperator, $m[0], $this->line, $this->col);
+                $token = new Token(TokenKind::ExpansionOperator, $m[0], $this->pos);
                 $this->queue->enqueue($token);
-                $this->advance(\strlen($m[0]) - 1);
+                $this->pos += \strlen($m[0]) - 1;
                 $this->state = TokenizerState::ExpansionArguments;
                 return true;
             }
@@ -278,9 +261,9 @@ final class Tokenizer implements TokenizerInterface
             EXPANSION_ARGUMENTS: {
                 switch ($cc) {
                     case '':
-                        throw ParseError::at('Unterminated expansion', $this->line, $this->col);
+                        throw ParseError::at('Unterminated expansion', $this->input, $this->pos);
                     case '}';
-                        $token = new Token(TokenKind::CloseBrace, '}', $this->line, $this->col);
+                        $token = new Token(TokenKind::CloseBrace, '}', $this->pos);
                         $this->queue->enqueue($token);
                         $this->state = $this->states->pop();
                         goto ADVANCE;
@@ -290,21 +273,20 @@ final class Tokenizer implements TokenizerInterface
                             case '':
                                 goto ADVANCE;
                             case "\n":
-                                $this->advance();
-                                $this->newline();
+                                ++$this->pos;
                                 goto ADVANCE;
                             default:
-                                $this->advance();
+                                ++$this->pos;
                                 $value = $this->quoted ? "\\{$cn}" : $cn;
-                                $this->queue->enqueue(new Token(TokenKind::Characters, $value, $this->line, $this->col));
+                                $this->queue->enqueue(new Token(TokenKind::Characters, $value, $this->pos));
                                 return true;
                         }
                     case '`':
-                        throw ParseError::at('Unsupported command expansion', $this->line, $this->col);
+                        throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case "'":
                         $this->flushBuffer();
                         if ($this->quoted) {
-                            $this->queue->enqueue(new Token(TokenKind::Characters, "'", $this->line, $this->col));
+                            $this->queue->enqueue(new Token(TokenKind::Characters, "'", $this->pos));
                             return true;
                         }
                         $this->states->push($this->state);
@@ -323,8 +305,8 @@ final class Tokenizer implements TokenizerInterface
                     default:
                         $this->flushBuffer();
                         preg_match('/[^\\\\}$"`\']+/A', $this->input, $m, 0, $this->pos);
-                        $token = new Token(TokenKind::Characters, $m[0], $this->line, $this->col);
-                        $this->advance(\strlen($m[0]) - 1);
+                        $token = new Token(TokenKind::Characters, $m[0], $this->pos);
+                        $this->pos += \strlen($m[0]) - 1;
                         $this->queue->enqueue($token);
                 }
             }
@@ -340,44 +322,32 @@ final class Tokenizer implements TokenizerInterface
         if ($m['special'] !== null) {
             throw ParseError::at(
                 "Unsupported special shell parameter: {$m['special']}",
-                $this->line,
-                $this->col,
+                $this->input,
+                $this->pos,
             );
         }
-        $token = new Token(TokenKind::SimpleExpansion, $m['identifier'], $this->line, $this->col);
-        $this->advance(\strlen($m[0]) - 1);
+        $token = new Token(TokenKind::SimpleExpansion, $m['identifier'], $this->pos);
+        $this->pos += \strlen($m[0]) - 1;
         return $token;
     }
 
     private function flushBuffer(): void
     {
         if ($this->buffer->value !== '') {
-            $this->queue->enqueue(new Token(TokenKind::Characters, $this->buffer->value, $this->buffer->line, $this->buffer->col));
+            $this->queue->enqueue(new Token(TokenKind::Characters, $this->buffer->value, $this->buffer->offset));
         }
         $this->buffer->value = '';
-        $this->buffer->line = $this->line;
-        $this->buffer->col = $this->col;
-    }
-
-    private function advance(int $n = 1): void
-    {
-        $this->pos += $n;
-        $this->col += $n;
-    }
-
-    private function newline(): void
-    {
-        ++$this->line;
-        $this->col = 0;
+        $this->buffer->offset = $this->pos;
     }
 
     private function unexpectedChar(string $char, string $message): ParseError
     {
+        $pos = SourcePosition::fromOffset($this->input, $this->pos);
         return new ParseError(sprintf(
             'Unexpected character "%s" on line %d, column %d. %s',
             $char,
-            $this->line,
-            $this->col,
+            $pos->line,
+            $pos->column,
             $message,
         ));
     }

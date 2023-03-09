@@ -10,4 +10,6 @@ interface TokenizerInterface
      * @return Iterator<int, Token>
      */
     public function tokenize(): Iterator;
+
+    public function getPosition(int $offset): SourcePosition;
 }

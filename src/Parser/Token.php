@@ -7,8 +7,7 @@ final class Token
     public function __construct(
         public readonly TokenKind $kind,
         public readonly string $value,
-        public readonly int $line,
-        public readonly int $col,
+        public readonly int $offset,
     ) {
     }
 }

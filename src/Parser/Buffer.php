@@ -6,8 +6,7 @@ final class Buffer
 {
     public string $value = '';
     public function __construct(
-        public int $line,
-        public int $col,
+        public int $offset,
     ) {
     }
 }
