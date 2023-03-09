@@ -6,11 +6,14 @@ enum TokenizerState
 {
     case AssignmentList;
     case AssignmentValue;
+    case AssignmentValueEscape;
     case SingleQuoted;
     case DoubleQuoted;
+    case DoubleQuotedEscape;
     case Dollar;
     case AfterDollar;
     case AfterDollarOpenBrace;
     case AfterExpansionIdentifier;
-    case ExpansionArguments;
+    case ExpansionValue;
+    case ExpansionValueEscape;
 }

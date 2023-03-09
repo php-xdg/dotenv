@@ -189,6 +189,8 @@ Consume the [next input character](#next-input-character).
 * U+0024 DOLLAR SIGN:
   * Push the current state onto the [stack of return states](#stack-of-return-states).
   * Switch to the [dollar state](#dollar-state)
+* anything else:
+  * Append the [current input character](#current-input-character) to the temporary buffer.
 
 ### Double-quoted escape state
 
@@ -284,7 +286,7 @@ Consume the [next input character](#next-input-character).
     * [Flush the temporary buffer](#flush-the-temporary-buffer) as a COMPLEX_EXPANSION token.
     * Create a new EXPANSION_OPERATOR token and set its value to the [current input character](#current-input-character).
     * Emit the newly created token.
-    * Switch to the [expansion arguments state](#expansion-value-state)
+    * Switch to the [expansion value state](#expansion-value-state)
 * anything else:
   * Parse error.
 
@@ -298,7 +300,7 @@ Consume the [next input character](#next-input-character).
   U+002D HYPHEN-MINUS:
     * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
     * [Flush the temporary buffer](#flush-the-temporary-buffer) as an EXPANSION_OPERATOR token.
-    * Switch to the [expansion arguments state](#expansion-value-state).
+    * Switch to the [expansion value state](#expansion-value-state).
 * anything else:
   * Parse error.
 
@@ -315,7 +317,7 @@ Consume the [next input character](#next-input-character).
   * Emit a new CLOSE_BRACE token.
   * Switch to the [return state](#return-state).
 * U+005C REVERSE SOLIDUS:
-  * Switch to the [expansion arguments escape state](#expansion-value-escape-state).
+  * Switch to the [expansion value escape state](#expansion-value-escape-state).
 * U+0024 DOLLAR SIGN:
   * Push the current state onto the [stack of return states](#stack-of-return-states).
   * Switch to the [dollar state](#dollar-state)
@@ -338,9 +340,9 @@ Consume the [next input character](#next-input-character).
 * EOF:
   * Parse error: unterminated expansion.
 * U+000A LINEFEED:
-  * Switch to the [expansion arguments state](#expansion-value-state).
+  * Switch to the [expansion value state](#expansion-value-state).
 * anything else:
   * If the [quoted flag](#quoted-flag) is `true`, append a U+005C REVERSE SOLIDUS codepoint to the [temporary buffer](#temporary-buffer).
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
-  * Switch to the [expansion arguments state](#expansion-value-state).
+  * Switch to the [expansion value state](#expansion-value-state).
   
