@@ -196,6 +196,7 @@ final class Tokenizer implements TokenizerInterface
                                 goto ADVANCE;
                             case '"':
                             case '$':
+                            case '`':
                             case '\\':
                                 $this->advance();
                                 $this->buffer->value .= $cn;
