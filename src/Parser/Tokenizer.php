@@ -30,7 +30,7 @@ final class Tokenizer implements TokenizerInterface
 
     public function __construct(
         private readonly string $input,
-        public TokenizerState $state = TokenizerState::Initial,
+        public TokenizerState $state = TokenizerState::AssignmentList,
     ) {
     }
 
@@ -54,8 +54,8 @@ final class Tokenizer implements TokenizerInterface
         RECONSUME:
         $cc = $this->input[$this->pos] ?? '';
         switch ($this->state) {
-            case TokenizerState::Initial:
-            INITIAL: {
+            case TokenizerState::AssignmentList:
+            ASSIGNMENT_LIST: {
                 switch ($cc) {
                     case '':
                         return false;
@@ -73,15 +73,15 @@ final class Tokenizer implements TokenizerInterface
                         if (preg_match('/([a-zA-Z_][a-zA-Z0-9_]*)=/A', $this->input, $m, 0, $this->pos)) {
                             $token = new Token(TokenKind::Assign, $m[1], $this->line, $this->col);
                             $this->advance(\strlen($m[0]) - 1);
-                            $this->state = TokenizerState::Unquoted;
+                            $this->state = TokenizerState::AssignmentValue;
                             $this->queue->enqueue($token);
                             return true;
                         }
                         throw $this->unexpectedChar($cc, 'Expected whitespace, newline, a comment or an identifier');
                 }
             }
-            case TokenizerState::Unquoted:
-            UNQUOTED: {
+            case TokenizerState::AssignmentValue:
+            ASSIGNMENT_VALUE: {
                 $this->quoted = false;
                 switch ($cc) {
                     case '':
@@ -91,12 +91,12 @@ final class Tokenizer implements TokenizerInterface
                     case "\t":
                         $this->flushBuffer();
                         $this->advance(\strspn($this->input, " \t", $this->pos));
-                        $this->state = TokenizerState::Initial;
+                        $this->state = TokenizerState::AssignmentList;
                         goto RECONSUME;
                     case "\n":
                         $this->flushBuffer();
                         $this->newline();
-                        $this->state = TokenizerState::Initial;
+                        $this->state = TokenizerState::AssignmentList;
                         goto ADVANCE;
                     case '\\':
                         $cn = $this->input[$this->pos + 1] ?? null;

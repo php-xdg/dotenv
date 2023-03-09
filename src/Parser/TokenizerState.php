@@ -4,8 +4,8 @@ namespace Xdg\Dotenv\Parser;
 
 enum TokenizerState
 {
-    case Initial;
-    case Unquoted;
+    case AssignmentList;
+    case AssignmentValue;
     case SingleQuoted;
     case DoubleQuoted;
     case Dollar;
