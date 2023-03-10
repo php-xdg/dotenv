@@ -54,8 +54,11 @@ When a state says to reconsume the return state:
 * pop a state off the stack of return states
 * [reconsume](#reconsume) in the state returned by the previous step
 
-### Quoted flag
-The quoted flag is a boolean flag which is initially set to `false`.
+### Quoting level
+The quoting level is an unsigned integer that is initially zero.
+When a state says to increment the quoting level, set the quoting level to its current value plus one.
+When a state says to decrement the quoting level, set the quoting level to its current value minus one.
+
 ### ASCII upper alpha
 An ASCII upper alpha is a code point in the range U+0041 (A) to U+005A (Z), inclusive.
 ### ASCII lower alpha
@@ -112,8 +115,6 @@ Consume the [next input character](#next-input-character).
 
 ### Assignment value state
 
-Set the [quoted flag](#quoted-flag) to `false`.
-
 Consume the [next input character](#next-input-character).
 
 * EOF:
@@ -128,6 +129,7 @@ Consume the [next input character](#next-input-character).
   * Push the current state onto the [stack of return states](#stack-of-return-states).
   * Switch to the [single-quoted state](#single-quoted-state).
 * U+0022 QUOTATION MARK:
+  * Increment the [quoting level](#quoting-level).
   * Push the current state onto the [stack of return states](#stack-of-return-states).
   * Switch to the [double-quoted state](#double-quoted-state).
 * U+0024 DOLLAR SIGN:
@@ -174,8 +176,6 @@ Consume the [next input character](#next-input-character).
 
 ### Double-quoted state
 
-Set the [quoted flag](#quoted-flag) to `true`.
-
 Consume the [next input character](#next-input-character).
 
 * EOF:
@@ -183,6 +183,7 @@ Consume the [next input character](#next-input-character).
 * U+0060 GRAVE ACCENT:
   * Parse error: unsupported command expansion.
 * U+0022 QUOTATION MARK:
+  * Decrement the [quoting level](#quoting-level).
   * Switch to the [return state](#return-state).
 * U+005C REVERSE SOLIDUS:
   * Switch to the [double-quoted escape state](#double-quoted-escape-state)
@@ -322,10 +323,11 @@ Consume the [next input character](#next-input-character).
   * Push the current state onto the [stack of return states](#stack-of-return-states).
   * Switch to the [dollar state](#dollar-state)
 * U+0022 QUOTATION MARK:
+  * Increment the [quoting level](#quoting-level).
   * Push the current state onto the [stack of return states](#stack-of-return-states).
   * Switch to the [double-quoted state](#double-quoted-state).
 * U+0027 APOSTROPHE:
-  * If the [quoted flag](#quoted-flag) is `true`, then:
+  * If the [quoting level](#quoting-level) is not zero, then:
     * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Otherwise:  
     * Push the current state onto the [stack of return states](#stack-of-return-states).
@@ -342,7 +344,8 @@ Consume the [next input character](#next-input-character).
 * U+000A LINEFEED:
   * Switch to the [expansion value state](#expansion-value-state).
 * anything else:
-  * If the [quoted flag](#quoted-flag) is `true`, append a U+005C REVERSE SOLIDUS codepoint to the [temporary buffer](#temporary-buffer).
+  * If the [quoting level](#quoting-level) is not zero,
+    append a U+005C REVERSE SOLIDUS codepoint to the [temporary buffer](#temporary-buffer).
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch to the [expansion value state](#expansion-value-state).
   

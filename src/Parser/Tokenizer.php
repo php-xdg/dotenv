@@ -8,7 +8,7 @@ final class Tokenizer implements TokenizerInterface
 {
     private int $pos = -1;
     private Buffer $buffer;
-    private bool $quoted = false;
+    private int $quotingLevel = 0;
 
     private \SplStack $returnStates;
 
@@ -65,7 +65,6 @@ final class Tokenizer implements TokenizerInterface
                 }
             }
             case TokenizerState::AssignmentValue: {
-                $this->quoted = false;
                 switch ($cc) {
                     case '':
                         yield from $this->flushTheTemporaryBuffer();
@@ -87,6 +86,7 @@ final class Tokenizer implements TokenizerInterface
                         goto ADVANCE;
                     case '"':
                         $this->returnStates->push($this->state);
+                        ++$this->quotingLevel;
                         $this->state = TokenizerState::DoubleQuoted;
                         goto ADVANCE;
                     case '`':
@@ -145,7 +145,6 @@ final class Tokenizer implements TokenizerInterface
             }
             case TokenizerState::DoubleQuoted:
             DOUBLE_QUOTED: {
-                $this->quoted = true;
                 switch ($cc) {
                     case '':
                         // TODO: properly track the error offset
@@ -153,6 +152,7 @@ final class Tokenizer implements TokenizerInterface
                     case '`':
                         throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case '"':
+                        --$this->quotingLevel;
                         $this->state = $this->returnStates->pop();
                         goto ADVANCE;
                     case '\\':
@@ -274,7 +274,7 @@ final class Tokenizer implements TokenizerInterface
                         $this->state = TokenizerState::ExpansionValueEscape;
                         goto ADVANCE;
                     case "'":
-                        if ($this->quoted) {
+                        if ($this->quotingLevel > 0) {
                             $this->buffer->value .= $cc;
                             goto ADVANCE;
                         }
@@ -283,6 +283,7 @@ final class Tokenizer implements TokenizerInterface
                         goto ADVANCE;
                     case '"':
                         $this->returnStates->push($this->state);
+                        ++$this->quotingLevel;
                         $this->state = TokenizerState::DoubleQuoted;
                         goto ADVANCE;
                     case '$':
@@ -305,7 +306,7 @@ final class Tokenizer implements TokenizerInterface
                         $this->state = TokenizerState::ExpansionValue;
                         goto ADVANCE;
                     default:
-                        if ($this->quoted) {
+                        if ($this->quotingLevel > 0) {
                             $this->buffer->value .= '\\';
                         }
                         $this->buffer->value .= $cc;
