@@ -31,11 +31,12 @@ provide it with the [current input character](#current-input-character) instead.
 The temporary buffer is a string of codepoints that is initially empty.
 
 ### Flush the temporary buffer
-When a state says to flush the temporary buffer, with an optional `type` argument:
+When a state says to flush the temporary buffer:
 1. If the [temporary buffer](#temporary-buffer) is not empty:
    * Create a new token.
-   * Set its type to the value of the `type` argument if given or CHARACTERS otherwise.
-   * Set its value to the contents of the temporary buffer.
+   * If the state says to flush the temporary buffer as a `<kind>` token, set the token's kind to the specified kind.
+     Otherwise, set the token's kind to `Characters`.
+   * Set the token's value to the contents of the temporary buffer.
    * Emit the newly created token.
 2. Set the [temporary buffer](#temporary-buffer) to the empty string.
 
@@ -79,7 +80,7 @@ The tokenizer state machine consists of the states defined in the following subs
 Consume the [next input character](#next-input-character).
 
 * EOF:
-  * Emit an end-of-file token.
+  * Emit an `EOF` token.
 * U+0020 SPACE, U+0009 TAB, U+000A LINEFEED:
   * Ignore the character
 * U+0023 NUMBER SIGN:
@@ -95,7 +96,7 @@ Consume the [next input character](#next-input-character).
 Consume the [next input character](#next-input-character).
 
 * EOF:
-  * Emit an end-of-file token.
+  * Emit an `EOF` token.
 * U+000A LINEFEED:
   * Switch to the [assignment list state](#assignment-list-state)
 * anything else:
@@ -108,7 +109,7 @@ Consume the [next input character](#next-input-character).
 * [ASCII alpha](#ascii-alpha), [ASCII digit](#ascii-digit) or U+005F LOW LINE:
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
 * U+003D EQUALS SIGN:
-  * [Flush the temporary buffer](#flush-the-temporary-buffer) as an ASSIGN token.
+  * [Flush the temporary buffer](#flush-the-temporary-buffer) as an `Assign` token.
   * Switch to the [assignment value state](#assignment-value-state)
 * anything else:
   * Parse error
@@ -119,7 +120,7 @@ Consume the [next input character](#next-input-character).
 
 * EOF:
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
-  * Emit an end-of-file token.
+  * Emit an `EOF` token.
 * U+0020 SPACE, U+0009 TAB, U+000A LINEFEED:
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
   * Switch to the [assignment list state](#assignment-list-state).
@@ -156,7 +157,7 @@ Consume the [next input character](#next-input-character).
 * EOF:
   * Append a U+005C REVERSE SOLIDUS codepoint to the [temporary buffer](#temporary-buffer).
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
-  * Emit an end-of-file token.
+  * Emit an `EOF` token.
 * U+000A LINEFEED:
   * Switch the [assignment value state](#assignment-value-state)
 * anything else:
@@ -264,7 +265,7 @@ Consume the [next input character](#next-input-character).
 * [ASCII alpha](#ascii-alpha), [ASCII digit](#ascii-digit) or U+005F LOW LINE:
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
 * anything else:
-  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a SIMPLE_EXPANSION token.
+  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a `SimpleExpansion` token.
   * [Reconsume](#reconsume) in the [return state](#return-state)
 
 ### Complex expansion state
@@ -274,18 +275,18 @@ Consume the [next input character](#next-input-character).
 * [ASCII alpha](#ascii-alpha), [ASCII digit](#ascii-digit) or U+005F LOW LINE:
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
 * U+007D RIGHT CURLY BRACKET:
-  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a SIMPLE_EXPANSION token.
+  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a `SimpleExpansion` token.
   * Switch to the [return state](#return-state).
 * U+003A COLON:
-  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a COMPLEX_EXPANSION token.
+  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a `ComplexExpansion` token.
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch to the [expansion operator state](#expansion-operator-state)
 * U+003F QUESTION MARK,
   U+003D EQUALS SIGN,
   U+002B PLUS SIGN,
   U+002D HYPHEN-MINUS:
-    * [Flush the temporary buffer](#flush-the-temporary-buffer) as a COMPLEX_EXPANSION token.
-    * Create a new EXPANSION_OPERATOR token and set its value to the [current input character](#current-input-character).
+    * [Flush the temporary buffer](#flush-the-temporary-buffer) as a `ComplexExpansion` token.
+    * Create a new `ExpansionOperator` token and set its value to the [current input character](#current-input-character).
     * Emit the newly created token.
     * Switch to the [expansion value state](#expansion-value-state)
 * anything else:
@@ -300,7 +301,7 @@ Consume the [next input character](#next-input-character).
   U+002B PLUS SIGN,
   U+002D HYPHEN-MINUS:
     * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
-    * [Flush the temporary buffer](#flush-the-temporary-buffer) as an EXPANSION_OPERATOR token.
+    * [Flush the temporary buffer](#flush-the-temporary-buffer) as an `ExpansionOperator` token.
     * Switch to the [expansion value state](#expansion-value-state).
 * anything else:
   * Parse error.
@@ -315,7 +316,7 @@ Consume the [next input character](#next-input-character).
   * Parse error: unsupported command expansion.
 * U+007D RIGHT CURLY BRACKET:
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
-  * Emit a new CLOSE_BRACE token.
+  * Emit a new `CloseBrace` token.
   * Switch to the [return state](#return-state).
 * U+005C REVERSE SOLIDUS:
   * Switch to the [expansion value escape state](#expansion-value-escape-state).
