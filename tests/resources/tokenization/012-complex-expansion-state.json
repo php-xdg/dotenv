@@ -1,0 +1,30 @@
+[
+  {
+    "desc": "expansion operators, no value",
+    "input": "a=${a-} a=${a+} a=${a=} a=${a?}",
+    "expected": [
+      {"kind": "Assign", "value":  "a"},
+      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "ExpansionOperator", "value":  "-"},
+      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "Assign", "value":  "a"},
+      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "ExpansionOperator", "value":  "+"},
+      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "Assign", "value":  "a"},
+      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "ExpansionOperator", "value":  "="},
+      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "Assign", "value":  "a"},
+      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "ExpansionOperator", "value":  "?"},
+      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "EOF", "value":  ""}
+    ]
+  },
+  {
+    "desc": "unterminated expansion",
+    "input": "a=${a",
+    "error": "ParseError"
+  }
+]

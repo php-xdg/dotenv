@@ -5,13 +5,58 @@ namespace Xdg\Dotenv\Tests\Parser;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\SourcePosition;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\Tokenizer;
 use Xdg\Dotenv\Parser\TokenKind;
+use Xdg\Dotenv\Tests\ResourceHelper;
+use Xdg\Dotenv\Tests\Specification\ReferenceTokenizer;
+use Xdg\Dotenv\Tests\TokenizationTestDTO;
 
 final class TokenizerTest extends TestCase
 {
+    #[DataProvider('specificationProvider')]
+    public function testSpecification(TokenizationTestDTO $dto): void
+    {
+        $tokenizer = new Tokenizer($dto->input);
+        if ($dto->error) {
+            $this->expectException(ParseError::class);
+        }
+        $tokens = array_map(
+            TokenizationTestDTO::convertToken(...),
+            iterator_to_array($tokenizer->tokenize(), false),
+        );
+        Assert::assertSame($dto->expected, $tokens);
+    }
+
+    #[DataProvider('specificationProvider')]
+    public function testReferenceTokenizer(TokenizationTestDTO $dto): void
+    {
+        $tokenizer = new ReferenceTokenizer($dto->input);
+        if ($dto->error) {
+            $this->expectException(ParseError::class);
+        }
+        $tokens = array_map(
+            TokenizationTestDTO::convertToken(...),
+            iterator_to_array($tokenizer->tokenize(), false),
+        );
+        Assert::assertSame($dto->expected, $tokens);
+    }
+
+    public static function specificationProvider(): iterable
+    {
+        foreach (ResourceHelper::glob('tokenization/*.json') as $file) {
+            $cases = json_decode(file_get_contents($file), true, 512, \JSON_THROW_ON_ERROR);
+            $fileName = basename($file);
+            foreach ($cases as $i => $case) {
+                $dto = TokenizationTestDTO::fromJson($case);
+                $key = sprintf('%s > %d: %s', $fileName, $i, $dto->desc);
+                yield $key => [$dto];
+            }
+        }
+    }
+
     public function testGetPosition(): void
     {
         $tokenizer = new Tokenizer($input = "a\nb\nc");
