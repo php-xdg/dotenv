@@ -9,10 +9,10 @@
     "input": "a=${a-a\\\nb}",
     "expected": [
       {"kind": "Assign", "value":  "a"},
-      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "StartExpansion", "value":  "a"},
       {"kind": "ExpansionOperator", "value":  "-"},
       {"kind": "Characters", "value":  "ab"},
-      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
       {"kind": "EOF", "value":  ""}
     ]
   },
@@ -21,10 +21,10 @@
     "input": "a=${a-\\\"\\$\\`\\\\}",
     "expected": [
       {"kind": "Assign", "value":  "a"},
-      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "StartExpansion", "value":  "a"},
       {"kind": "ExpansionOperator", "value":  "-"},
       {"kind": "Characters", "value":  "\"$`\\"},
-      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
       {"kind": "EOF", "value":  ""}
     ]
   },
@@ -33,10 +33,10 @@
     "input": "a=\"${a-\\\"\\$\\`\\\\}\"",
     "expected": [
       {"kind": "Assign", "value":  "a"},
-      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "StartExpansion", "value":  "a"},
       {"kind": "ExpansionOperator", "value":  "-"},
       {"kind": "Characters", "value":  "\"$`\\"},
-      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
       {"kind": "EOF", "value":  ""}
     ]
   },
@@ -45,16 +45,16 @@
     "input": "a=\"${a-${b-${c-\\$\\a}}}\"",
     "expected": [
       {"kind": "Assign", "value":  "a"},
-      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "StartExpansion", "value":  "a"},
       {"kind": "ExpansionOperator", "value":  "-"},
-      {"kind": "ComplexExpansion", "value":  "b"},
+      {"kind": "StartExpansion", "value":  "b"},
       {"kind": "ExpansionOperator", "value":  "-"},
-      {"kind": "ComplexExpansion", "value":  "c"},
+      {"kind": "StartExpansion", "value":  "c"},
       {"kind": "ExpansionOperator", "value":  "-"},
       {"kind": "Characters", "value":  "$\\a"},
-      {"kind": "CloseBrace", "value":  "}"},
-      {"kind": "CloseBrace", "value":  "}"},
-      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
       {"kind": "EOF", "value":  ""}
     ]
   },
@@ -63,17 +63,17 @@
     "input": "a=${a-\"${b-\\$\\a}\"${c-\\$\\a}}",
     "expected": [
       {"kind": "Assign", "value":  "a"},
-      {"kind": "ComplexExpansion", "value":  "a"},
+      {"kind": "StartExpansion", "value":  "a"},
       {"kind": "ExpansionOperator", "value":  "-"},
-      {"kind": "ComplexExpansion", "value":  "b"},
+      {"kind": "StartExpansion", "value":  "b"},
       {"kind": "ExpansionOperator", "value":  "-"},
       {"kind": "Characters", "value":  "$\\a"},
-      {"kind": "CloseBrace", "value":  "}"},
-      {"kind": "ComplexExpansion", "value":  "c"},
+      {"kind": "EndExpansion", "value":  "}"},
+      {"kind": "StartExpansion", "value":  "c"},
       {"kind": "ExpansionOperator", "value":  "-"},
       {"kind": "Characters", "value":  "$a"},
-      {"kind": "CloseBrace", "value":  "}"},
-      {"kind": "CloseBrace", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
+      {"kind": "EndExpansion", "value":  "}"},
       {"kind": "EOF", "value":  ""}
     ]
   }

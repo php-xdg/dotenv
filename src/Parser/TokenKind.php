@@ -11,7 +11,7 @@ enum TokenKind
     case Characters;
     case Assign;
     case SimpleExpansion;
-    case ComplexExpansion;
+    case StartExpansion;
     case ExpansionOperator;
-    case CloseBrace;
+    case EndExpansion;
 }

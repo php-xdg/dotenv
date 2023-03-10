@@ -249,7 +249,7 @@ final class Tokenizer implements TokenizerInterface
                         goto ADVANCE;
                     default:
                         if (preg_match('/:?[?=+-]/A', $this->input, $m, 0, $this->pos)) {
-                            yield from $this->flushTheTemporaryBuffer(TokenKind::ComplexExpansion);
+                            yield from $this->flushTheTemporaryBuffer(TokenKind::StartExpansion);
                             // expansion operator state
                             yield new Token(TokenKind::ExpansionOperator, $m[0], $this->pos);
                             $this->pos += \strlen($m[0]);
@@ -267,7 +267,7 @@ final class Tokenizer implements TokenizerInterface
                         throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case '}';
                         yield from $this->flushTheTemporaryBuffer();
-                        yield new Token(TokenKind::CloseBrace, '}', $this->pos);
+                        yield new Token(TokenKind::EndExpansion, '}', $this->pos);
                         $this->state = $this->returnStates->pop();
                         goto ADVANCE;
                     case '\\':

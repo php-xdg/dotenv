@@ -253,7 +253,7 @@ final class ReferenceTokenizer implements TokenizerInterface
                         $this->state = $returnStates->pop();
                         goto ADVANCE;
                     case ':':
-                        yield from $this->flushTheTemporaryBuffer(TokenKind::ComplexExpansion);
+                        yield from $this->flushTheTemporaryBuffer(TokenKind::StartExpansion);
                         $this->temporaryBuffer->value = $cc;
                         $this->state = TokenizerState::ExpansionOperator;
                         goto ADVANCE;
@@ -261,7 +261,7 @@ final class ReferenceTokenizer implements TokenizerInterface
                     case '=':
                     case '+':
                     case '-':
-                        yield from $this->flushTheTemporaryBuffer(TokenKind::ComplexExpansion);
+                        yield from $this->flushTheTemporaryBuffer(TokenKind::StartExpansion);
                         yield new Token(TokenKind::ExpansionOperator, $cc, $this->pos);
                         $this->state = TokenizerState::ExpansionValue;
                         goto ADVANCE;
@@ -292,7 +292,7 @@ final class ReferenceTokenizer implements TokenizerInterface
                         throw $this->unexpectedChar($cc);
                     case '}':
                         yield from $this->flushTheTemporaryBuffer();
-                        yield new Token(TokenKind::CloseBrace, '}', $this->pos);
+                        yield new Token(TokenKind::EndExpansion, '}', $this->pos);
                         $this->state = $returnStates->pop();
                         goto ADVANCE;
                     case '\\':

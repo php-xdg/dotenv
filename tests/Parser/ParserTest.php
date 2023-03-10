@@ -35,14 +35,14 @@ final class ParserTest extends TestCase
         yield 'unexpected token in expansion operator' => [
             [
                 new Token(TokenKind::Assign, 'foo', 0),
-                new Token(TokenKind::ComplexExpansion, 'foo', 0),
+                new Token(TokenKind::StartExpansion, 'foo', 0),
                 new Token(TokenKind::Assign, 'bar', 0),
             ],
         ];
         yield 'unexpected token in expansion arguments' => [
             [
                 new Token(TokenKind::Assign, 'foo', 0),
-                new Token(TokenKind::ComplexExpansion, 'foo', 0),
+                new Token(TokenKind::StartExpansion, 'foo', 0),
                 new Token(TokenKind::ExpansionOperator, ':-', 0),
                 new Token(TokenKind::Assign, 'bar', 0),
             ],

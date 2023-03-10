@@ -63,7 +63,7 @@ final class Parser
                     $this->tokens->next();
                     $nodes[] = new SimpleReference($token->value);
                     break;
-                case TokenKind::ComplexExpansion:
+                case TokenKind::StartExpansion:
                     $this->tokens->next();
                     $op = $this->expect(TokenKind::ExpansionOperator)->value;
                     $rhs = $this->parseExpansionArguments();
@@ -75,7 +75,7 @@ final class Parser
                         $this->tokenizer->getPosition($token->offset),
                         TokenKind::Characters,
                         TokenKind::SimpleExpansion,
-                        TokenKind::ComplexExpansion,
+                        TokenKind::StartExpansion,
                     );
             }
         }
@@ -87,7 +87,7 @@ final class Parser
         while (true) {
             $token = $this->tokens->current();
             switch ($token->kind) {
-                case TokenKind::CloseBrace:
+                case TokenKind::EndExpansion:
                     $this->tokens->next();
                     return self::createValue($nodes);
                 case TokenKind::Characters:
@@ -98,7 +98,7 @@ final class Parser
                     $this->tokens->next();
                     $nodes[] = new SimpleReference($token->value);
                     break;
-                case TokenKind::ComplexExpansion:
+                case TokenKind::StartExpansion:
                     $this->tokens->next();
                     $op = $this->expect(TokenKind::ExpansionOperator)->value;
                     $rhs = $this->parseExpansionArguments();
@@ -110,8 +110,8 @@ final class Parser
                         $this->tokenizer->getPosition($token->offset),
                         TokenKind::Characters,
                         TokenKind::SimpleExpansion,
-                        TokenKind::ComplexExpansion,
-                        TokenKind::CloseBrace,
+                        TokenKind::StartExpansion,
+                        TokenKind::EndExpansion,
                     );
             }
         }
