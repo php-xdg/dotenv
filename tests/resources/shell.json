@@ -93,5 +93,20 @@
         "desc": "special char in unquoted expansion",
         "input": "${NOPE:-a&b;c}",
         "expected": "a&b;c"
+    },
+    {
+        "desc": "escaped special characters in unquoted expansion",
+        "input": "${NOPE-\\\"\\$\\`\\\\}",
+        "expected": "\"$`\\"
+    },
+    {
+        "desc": "escaped special characters in quoted expansion",
+        "input": "\"${NOPE-\\\"\\$\\`\\\\}\"",
+        "expected": "\"$`\\"
+    },
+    {
+        "desc": "complex escapes in nested expansions",
+        "input": "a=${a-\"${b-\\$\\a}\"${c-\\$\\a}}",
+        "expected": "a=$\\a$a"
     }
 ]

@@ -344,6 +344,12 @@ Consume the [next input character](#next-input-character).
   * Parse error: unterminated expansion.
 * U+000A LINEFEED:
   * Switch to the [expansion value state](#expansion-value-state).
+* U+0022 QUOTATION MARK,
+  U+0024 DOLLAR SIGN,
+  U+0060 GRAVE ACCENT,
+  U+005C REVERSE SOLIDUS:
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
+  * Switch to the [expansion value state](#expansion-value-state).
 * anything else:
   * If the [quoting level](#quoting-level) is not zero,
     append a U+005C REVERSE SOLIDUS codepoint to the [temporary buffer](#temporary-buffer).

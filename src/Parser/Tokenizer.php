@@ -305,6 +305,13 @@ final class Tokenizer implements TokenizerInterface
                     case "\n":
                         $this->state = TokenizerState::ExpansionValue;
                         goto ADVANCE;
+                    case '"':
+                    case '$':
+                    case '`':
+                    case '\\':
+                        $this->buffer->value .= $cc;
+                        $this->state = TokenizerState::ExpansionValue;
+                        goto ADVANCE;
                     default:
                         if ($this->quotingLevel > 0) {
                             $this->buffer->value .= '\\';

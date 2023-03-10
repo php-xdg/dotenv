@@ -77,4 +77,16 @@ return [
         'desc' => 'special char in unquoted expansion',
         'input' => '${NOPE:-a&b;c}',
     ],
+    [
+        'desc' => 'escaped special characters in unquoted expansion',
+        'input' => '${NOPE-\\"\\$\\`\\\\}'
+    ],
+    [
+        'desc' => 'escaped special characters in quoted expansion',
+        'input' => '"${NOPE-\\"\\$\\`\\\\}"'
+    ],
+    [
+        'desc' => 'complex escapes in nested expansions',
+        'input' => 'a=${a-"${b-\\$\\a}"${c-\\$\\a}}'
+    ]
 ];
