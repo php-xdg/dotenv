@@ -5,15 +5,18 @@ namespace Xdg\Dotenv\Parser;
 enum TokenizerState
 {
     case AssignmentList;
+    case Comment;
+    case AssignmentName;
     case AssignmentValue;
     case AssignmentValueEscape;
     case SingleQuoted;
     case DoubleQuoted;
     case DoubleQuotedEscape;
     case Dollar;
-    case AfterDollar;
-    case AfterDollarOpenBrace;
-    case AfterExpansionIdentifier;
+    case DollarBrace;
+    case SimpleExpansion;
+    case ComplexExpansion;
+    case ExpansionOperator;
     case ExpansionValue;
     case ExpansionValueEscape;
 }

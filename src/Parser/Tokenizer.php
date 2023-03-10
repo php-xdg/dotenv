@@ -12,15 +12,10 @@ final class Tokenizer implements TokenizerInterface
 
     private \SplStack $returnStates;
 
-    private const SIMPLE_EXPANSION_RX = <<<'REGEXP'
+    private const EXPANSION_RX = <<<'REGEXP'
     /
-        \$
-        (?<brace> { )?
-        (?:
-            (?<special> [@*#?$!-] | \d+ )
-            | (?<identifier> [a-zA-Z_][a-zA-Z0-9_]* )
-        )
-        (?(<brace>) } )
+        [a-zA-Z_][a-zA-Z0-9_]*
+        | (?: [@*#?$!-] | \d+ ) (*MARK:special)
     /Ax
     REGEXP;
 
@@ -54,13 +49,16 @@ final class Tokenizer implements TokenizerInterface
                         $this->pos += \strspn($this->input, " \t\n", $this->pos);
                         goto RECONSUME;
                     case '#':
+                        // comment state
                         $this->pos += \strcspn($this->input, "\n", $this->pos);
                         goto RECONSUME;
                     default:
                         if (preg_match('/([a-zA-Z_][a-zA-Z0-9_]*)=/A', $this->input, $m, 0, $this->pos)) {
+                            // assignment name state
                             yield new Token(TokenKind::Assign, $m[1], $this->pos);
                             $this->pos += \strlen($m[0]);
                             $this->state = TokenizerState::AssignmentValue;
+                            $this->buffer->offset = $this->pos;
                             goto RECONSUME;
                         }
                         throw $this->unexpectedChar($cc, 'Expected whitespace, newline, a comment or an identifier');
@@ -104,7 +102,7 @@ final class Tokenizer implements TokenizerInterface
                     case '$':
                         $this->returnStates->push($this->state);
                         $this->state = TokenizerState::Dollar;
-                        goto DOLLAR;
+                        goto ADVANCE;
                     default:
                         preg_match('/[^\\\\ \t\n\'"`$|&;<>()]+/A', $this->input, $m, 0, $this->pos);
                         $this->buffer->value .= $m[0];
@@ -155,7 +153,6 @@ final class Tokenizer implements TokenizerInterface
                     case '`':
                         throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case '"':
-                        yield from $this->flushTheTemporaryBuffer();
                         $this->state = $this->returnStates->pop();
                         goto ADVANCE;
                     case '\\':
@@ -164,7 +161,7 @@ final class Tokenizer implements TokenizerInterface
                     case '$':
                         $this->returnStates->push($this->state);
                         $this->state = TokenizerState::Dollar;
-                        goto DOLLAR;
+                        goto ADVANCE;
                     default:
                         preg_match('/[^\\\\"`$]+/A', $this->input, $m, 0, $this->pos);
                         $this->buffer->value .= $m[0];
@@ -194,53 +191,73 @@ final class Tokenizer implements TokenizerInterface
                         goto ADVANCE;
                 }
             }
-            case TokenizerState::Dollar:
-            DOLLAR: {
-                if ($token = $this->matchSimpleExpansion()) {
-                    yield from $this->flushTheTemporaryBuffer();
-                    yield $token;
-                    $state = $this->returnStates->pop();
-                    $this->state = $state;
-                    goto ADVANCE;
-                }
-                $this->state = TokenizerState::AfterDollar;
-                goto ADVANCE;
-            }
-            case TokenizerState::AfterDollar: {
+            case TokenizerState::Dollar: {
                 switch ($cc) {
-                    case '':
-                        $this->buffer->value .= '$';
-                        yield from $this->flushTheTemporaryBuffer();
-                        yield $this->eof();
-                        return null;
                     case '(':
-                        throw ParseError::at('Unsupported command or arithmetic expansion', $this->input, $this->pos);
+                        $type = match ($this->input[$this->pos + 1] ?? '') {
+                            '(' => 'arithmetic',
+                            default => 'command',
+                        };
+                        throw ParseError::at("Unsupported {$type} expansion", $this->input, $this->pos);
                     case '{':
-                        $this->state = TokenizerState::AfterDollarOpenBrace;
+                        $this->state = TokenizerState::DollarBrace;
                         goto ADVANCE;
                     default:
+                        if (preg_match(self::EXPANSION_RX, $this->input, $m, 0, $this->pos)) {
+                            if (isset($m['MARK'])) {
+                                throw ParseError::at(
+                                    sprintf('Unsupported special shell parameter "$%s"', $m[0]),
+                                    $this->input,
+                                    $this->pos,
+                                );
+                            }
+                            yield from $this->flushTheTemporaryBuffer();
+                            // simple expansion state
+                            yield new Token(TokenKind::SimpleExpansion, $m[0], $this->pos);
+                            $this->pos += \strlen($m[0]);
+                            $this->state = $this->returnStates->pop();
+                            goto RECONSUME;
+                        }
                         $this->buffer->value .= '$';
                         $this->state = $this->returnStates->pop();
                         goto RECONSUME;
                 }
             }
-            case TokenizerState::AfterDollarOpenBrace: {
-                if (!preg_match('/[a-zA-Z_][a-zA-Z0-9_]*/A', $this->input, $m, 0, $this->pos)) {
-                    throw $this->unexpectedChar($cc, 'Expected an identifier');
+            case TokenizerState::DollarBrace: {
+                if (preg_match(self::EXPANSION_RX, $this->input, $m, 0, $this->pos)) {
+                    if (isset($m['MARK'])) {
+                        throw ParseError::at(
+                            sprintf('Unsupported special shell parameter "$%s"', $m[0]),
+                            $this->input,
+                            $this->pos,
+                        );
+                    }
+                    yield from $this->flushTheTemporaryBuffer();
+                    // part of the complex expansion state
+                    $this->buffer->value = $m[0];
+                    $this->pos += \strlen($m[0]);
+                    $this->state = TokenizerState::ComplexExpansion;
+                    goto RECONSUME;
                 }
-                yield new Token(TokenKind::ComplexExpansion, $m[0], $this->pos);
-                $this->pos += \strlen($m[0]);
-                $this->state = TokenizerState::AfterExpansionIdentifier;
-                goto RECONSUME;
+                throw $this->unexpectedChar($cc, 'Expected an identifier');
             }
-            case TokenizerState::AfterExpansionIdentifier: {
-                if (!preg_match('/:?[?=+-]/A', $this->input, $m, 0, $this->pos)) {
-                    throw $this->unexpectedChar($cc, 'Expected an expansion operator');
+            case TokenizerState::ComplexExpansion: {
+                switch ($cc) {
+                    case '}':
+                        yield from $this->flushTheTemporaryBuffer(TokenKind::SimpleExpansion);
+                        $this->state = $this->returnStates->pop();
+                        goto ADVANCE;
+                    default:
+                        if (preg_match('/:?[?=+-]/A', $this->input, $m, 0, $this->pos)) {
+                            yield from $this->flushTheTemporaryBuffer(TokenKind::ComplexExpansion);
+                            // expansion operator state
+                            yield new Token(TokenKind::ExpansionOperator, $m[0], $this->pos);
+                            $this->pos += \strlen($m[0]);
+                            $this->state = TokenizerState::ExpansionValue;
+                            goto RECONSUME;
+                        }
+                        throw $this->unexpectedChar($cc, 'Expected "}" or an expansion operator');
                 }
-                yield new Token(TokenKind::ExpansionOperator, $m[0], $this->pos);
-                $this->pos += \strlen($m[0]);
-                $this->state = TokenizerState::ExpansionValue;
-                goto RECONSUME;
             }
             case TokenizerState::ExpansionValue: {
                 switch ($cc) {
@@ -265,18 +282,16 @@ final class Tokenizer implements TokenizerInterface
                         $this->state = TokenizerState::SingleQuoted;
                         goto ADVANCE;
                     case '"':
-                        yield from $this->flushTheTemporaryBuffer();
                         $this->returnStates->push($this->state);
                         $this->state = TokenizerState::DoubleQuoted;
                         goto ADVANCE;
                     case '$':
                         $this->returnStates->push($this->state);
                         $this->state = TokenizerState::Dollar;
-                        goto DOLLAR;
+                        goto ADVANCE;
                     default:
-                        yield from $this->flushTheTemporaryBuffer();
                         preg_match('/[^\\\\}$"`\']+/A', $this->input, $m, 0, $this->pos);
-                        yield new Token(TokenKind::Characters, $m[0], $this->pos);
+                        $this->buffer->value .= $m[0];
                         $this->pos += \strlen($m[0]);
                         goto RECONSUME;
                 }
@@ -284,6 +299,7 @@ final class Tokenizer implements TokenizerInterface
             case TokenizerState::ExpansionValueEscape: {
                 switch ($cc) {
                     case '':
+                        // TODO: properly track the error offset
                         throw ParseError::at('Unterminated expansion', $this->input, $this->pos);
                     case "\n":
                         $this->state = TokenizerState::ExpansionValue;
@@ -297,30 +313,21 @@ final class Tokenizer implements TokenizerInterface
                         goto ADVANCE;
                 }
             }
+            // The following states from the spec have been inlined for performance.
+            // @codeCoverageIgnoreStart
+            case TokenizerState::Comment:
+            case TokenizerState::AssignmentName:
+            case TokenizerState::SimpleExpansion:
+            case TokenizerState::ExpansionOperator:
+                throw new \LogicException('Unused state: ' . $this->state->name);
+            // @codeCoverageIgnoreEnd
         }
     }
 
-    private function matchSimpleExpansion(): ?Token
-    {
-        if (!preg_match(self::SIMPLE_EXPANSION_RX, $this->input, $m, \PREG_UNMATCHED_AS_NULL, $this->pos)) {
-            return null;
-        }
-        if ($m['special'] !== null) {
-            throw ParseError::at(
-                "Unsupported special shell parameter: {$m['special']}",
-                $this->input,
-                $this->pos,
-            );
-        }
-        $token = new Token(TokenKind::SimpleExpansion, $m['identifier'], $this->pos);
-        $this->pos += \strlen($m[0]) - 1;
-        return $token;
-    }
-
-    private function flushTheTemporaryBuffer(): iterable
+    private function flushTheTemporaryBuffer(TokenKind $kind = TokenKind::Characters): iterable
     {
         if ($this->buffer->value !== '') {
-            yield new Token(TokenKind::Characters, $this->buffer->value, $this->buffer->offset);
+            yield new Token($kind, $this->buffer->value, $this->buffer->offset);
         }
         $this->buffer->value = '';
         $this->buffer->offset = $this->pos;
@@ -335,8 +342,9 @@ final class Tokenizer implements TokenizerInterface
     {
         $pos = SourcePosition::fromOffset($this->input, $this->pos);
         return new ParseError(sprintf(
-            'Unexpected character "%s" on line %d, column %d. %s',
+            'Unexpected character "%s" in %s state on line %d, column %d. %s',
             $char,
+            $this->state->name,
             $pos->line,
             $pos->column,
             $message,
