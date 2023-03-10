@@ -203,7 +203,8 @@ final class ReferenceTokenizer implements TokenizerInterface
                     case '(':
                         throw $this->unexpectedChar($cc);
                     case '{':
-                        $this->state = TokenizerState::DollarBrace;
+                        yield from $this->flushTheTemporaryBuffer();
+                        $this->state = TokenizerState::ComplexExpansionStart;
                         goto ADVANCE;
                     default:
                         if ($cc === '_' || \ctype_alpha($cc)) {
@@ -219,7 +220,7 @@ final class ReferenceTokenizer implements TokenizerInterface
                         $this->state = $returnStates->pop();
                         goto RECONSUME;
                 }
-            case TokenizerState::DollarBrace:
+            case TokenizerState::ComplexExpansionStart:
                 switch ($cc) {
                     case '@':
                     case '*':
@@ -231,7 +232,6 @@ final class ReferenceTokenizer implements TokenizerInterface
                         throw $this->unexpectedChar($cc);
                     default:
                         if ($cc === '_' || \ctype_alpha($cc)) {
-                            yield from $this->flushTheTemporaryBuffer();
                             $this->temporaryBuffer->value = $cc;
                             $this->state = TokenizerState::ComplexExpansion;
                             goto ADVANCE;

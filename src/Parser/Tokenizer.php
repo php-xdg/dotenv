@@ -200,7 +200,8 @@ final class Tokenizer implements TokenizerInterface
                         };
                         throw ParseError::at("Unsupported {$type} expansion", $this->input, $this->pos);
                     case '{':
-                        $this->state = TokenizerState::DollarBrace;
+                        yield from $this->flushTheTemporaryBuffer();
+                        $this->state = TokenizerState::ComplexExpansionStart;
                         goto ADVANCE;
                     default:
                         if (preg_match(self::EXPANSION_RX, $this->input, $m, 0, $this->pos)) {
@@ -223,7 +224,7 @@ final class Tokenizer implements TokenizerInterface
                         goto RECONSUME;
                 }
             }
-            case TokenizerState::DollarBrace: {
+            case TokenizerState::ComplexExpansionStart: {
                 if (preg_match(self::EXPANSION_RX, $this->input, $m, 0, $this->pos)) {
                     if (isset($m['MARK'])) {
                         throw ParseError::at(
@@ -232,7 +233,6 @@ final class Tokenizer implements TokenizerInterface
                             $this->pos,
                         );
                     }
-                    yield from $this->flushTheTemporaryBuffer();
                     // part of the complex expansion state
                     $this->buffer->value = $m[0];
                     $this->pos += \strlen($m[0]);

@@ -228,22 +228,32 @@ Consume the [next input character](#next-input-character).
     * Parse error: unsupported special shell parameter
 * U+0028 LEFT PARENTHESIS:
   * Parse error: unsupported command or arithmetic expansion
-* U+007B LEFT CURLY BRACKET:
-  * Switch to the [dollar brace state](#dollar-brace-state)
 * [ASCII alpha](#ascii-alpha) or U+005F LOW LINE:
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch to the [simple expansion state](#simple-expansion-state).
+* U+007B LEFT CURLY BRACKET:
+  * [Flush the temporary buffer](#flush-the-temporary-buffer).
+  * Switch to the [complex expansion start state](#complex-expansion-start-state)
 * anything else:
   * Append a U+0024 DOLLAR SIGN codepoint to the [temporary buffer](#temporary-buffer).
   * [Reconsume](#reconsume) in the [return state](#return-state).
 
-### Dollar brace state
+### Simple expansion state
+
+Consume the [next input character](#next-input-character).
+
+* [ASCII alpha](#ascii-alpha), [ASCII digit](#ascii-digit) or U+005F LOW LINE:
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
+* anything else:
+  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a `SimpleExpansion` token.
+  * [Reconsume](#reconsume) in the [return state](#return-state)
+
+### Complex expansion start state
 
 Consume the [next input character](#next-input-character).
 
 * [ASCII alpha](#ascii-alpha) or U+005F LOW LINE:
-  * [Flush the temporary buffer](#flush-the-temporary-buffer).
   * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch to the [complex expansion state](#complex-expansion-state).
 * [ASCII digit](#ascii-digit),
@@ -257,16 +267,6 @@ Consume the [next input character](#next-input-character).
     * Parse error: unsupported special shell parameter
 * anything else:
     * Parse error
-
-### Simple expansion state
-
-Consume the [next input character](#next-input-character).
-
-* [ASCII alpha](#ascii-alpha), [ASCII digit](#ascii-digit) or U+005F LOW LINE:
-  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
-* anything else:
-  * [Flush the temporary buffer](#flush-the-temporary-buffer) as a `SimpleExpansion` token.
-  * [Reconsume](#reconsume) in the [return state](#return-state)
 
 ### Complex expansion state
 

@@ -13,8 +13,8 @@ enum TokenizerState
     case DoubleQuoted;
     case DoubleQuotedEscape;
     case Dollar;
-    case DollarBrace;
     case SimpleExpansion;
+    case ComplexExpansionStart;
     case ComplexExpansion;
     case ExpansionOperator;
     case ExpansionValue;
