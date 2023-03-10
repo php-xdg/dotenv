@@ -144,7 +144,7 @@ Consume the [next input character](#next-input-character).
   U+0029 RIGHT PARENTHESIS:
     * Parse error: unescaped reserved shell character.
 * anything else:
-  * Append the [current input character](#current-input-character) to the temporary buffer.
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
 
 
 ### Assignment value escape state
@@ -152,13 +152,13 @@ Consume the [next input character](#next-input-character).
 Consume the [next input character](#next-input-character).
 
 * EOF:
-  * Append a U+005C REVERSE SOLIDUS codepoint to the temporary buffer.
+  * Append a U+005C REVERSE SOLIDUS codepoint to the [temporary buffer](#temporary-buffer).
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
   * Emit an end-of-file token.
 * U+000A LINEFEED:
   * Switch the [assignment value state](#assignment-value-state)
 * anything else:
-  * Append the [current input character](#current-input-character) to the temporary buffer.
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch the [assignment value state](#assignment-value-state)
 
 ### Single-quoted state
@@ -170,7 +170,7 @@ Consume the [next input character](#next-input-character).
 * U+0027 APOSTROPHE:
   * Switch to the [return state](#return-state).
 * anything else:
-  * Append the [current input character](#current-input-character) to the temporary buffer.
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
 
 ### Double-quoted state
 
@@ -190,7 +190,7 @@ Consume the [next input character](#next-input-character).
   * Push the current state onto the [stack of return states](#stack-of-return-states).
   * Switch to the [dollar state](#dollar-state)
 * anything else:
-  * Append the [current input character](#current-input-character) to the temporary buffer.
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
 
 ### Double-quoted escape state
 
@@ -204,11 +204,11 @@ Consume the [next input character](#next-input-character).
   U+0024 DOLLAR SIGN,
   U+0060 GRAVE ACCENT,
   U+005C REVERSE SOLIDUS:
-    * Append the [current input character](#current-input-character) to the temporary buffer.
+    * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
     * Switch the [double-quoted state](#double-quoted-state).
 * anything else:
-  * Append a U+005C REVERSE SOLIDUS codepoint to the temporary buffer.
-  * Append the [current input character](#current-input-character) to the temporary buffer.
+  * Append a U+005C REVERSE SOLIDUS codepoint to the [temporary buffer](#temporary-buffer).
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch the [double-quoted state](#double-quoted-state).
 
 ### Dollar state
@@ -230,10 +230,10 @@ Consume the [next input character](#next-input-character).
   * Switch to the [dollar brace state](#dollar-brace-state)
 * [ASCII alpha](#ascii-alpha) or U+005F LOW LINE:
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
-  * Append the [current input character](#current-input-character) to the temporary buffer.
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch to the [simple expansion state](#simple-expansion-state).
 * anything else:
-  * Append a U+0024 DOLLAR SIGN codepoint to the temporary buffer.
+  * Append a U+0024 DOLLAR SIGN codepoint to the [temporary buffer](#temporary-buffer).
   * [Reconsume](#reconsume) in the [return state](#return-state).
 
 ### Dollar brace state
@@ -242,7 +242,7 @@ Consume the [next input character](#next-input-character).
 
 * [ASCII alpha](#ascii-alpha) or U+005F LOW LINE:
   * [Flush the temporary buffer](#flush-the-temporary-buffer).
-  * Append the [current input character](#current-input-character) to the temporary buffer.
+  * Append the [current input character](#current-input-character) to the [temporary buffer](#temporary-buffer).
   * Switch to the [complex expansion state](#complex-expansion-state).
 * [ASCII digit](#ascii-digit),
   U+0040 COMMERCIAL AT,
