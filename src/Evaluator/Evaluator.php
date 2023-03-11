@@ -5,11 +5,8 @@ namespace Xdg\Dotenv\Evaluator;
 use Xdg\Dotenv\Exception\UndefinedVariable;
 use Xdg\Dotenv\Parser\Ast\Assignment;
 use Xdg\Dotenv\Parser\Ast\AssignmentList;
-use Xdg\Dotenv\Parser\Ast\ComplexReference;
-use Xdg\Dotenv\Parser\Ast\CompositeValue;
+use Xdg\Dotenv\Parser\Ast\Expansion;
 use Xdg\Dotenv\Parser\Ast\ExpansionOperator;
-use Xdg\Dotenv\Parser\Ast\SimpleReference;
-use Xdg\Dotenv\Parser\Ast\SimpleValue;
 use Xdg\Environment\EnvironmentProviderInterface;
 use Xdg\Environment\Provider\ArrayProvider;
 
@@ -33,71 +30,61 @@ final class Evaluator
 
     private function evaluateAssignment(Assignment $node): void
     {
-        $key = $node->key;
+        $key = $node->name;
         if (!$this->overrideEnv && null !== $value = $this->env->get($key)) {
             $this->scope[$key] = $value;
-            return;
-        }
-        if ($node->value === null) {
-            $this->scope[$key] = $this->resolve($key) ?? '';
             return;
         }
         $this->scope[$key] = $this->evaluateExpression($node->value);
     }
 
-    private function evaluateExpression(SimpleValue|CompositeValue|SimpleReference|ComplexReference $expr): string
+    private function evaluateExpression(array $nodes): string
     {
-        if ($expr instanceof SimpleValue) {
-            return $expr->value;
+        $result = '';
+        foreach ($nodes as $node) {
+            $result .= match (true) {
+                \is_string($node) => $node,
+                $node instanceof Expansion => $this->evaluateExpansion($node),
+            };
         }
-        if ($expr instanceof CompositeValue) {
-            $value = '';
-            foreach ($expr->nodes as $node) {
-                $value .= $this->evaluateExpression($node);
-            }
-            return $value;
-        }
-        return $this->evaluateReference($expr);
+        return $result;
     }
 
-    private function evaluateReference(SimpleReference|ComplexReference $ref): string
+    private function evaluateExpansion(Expansion $node): string
     {
-        $key = $ref->id;
+        $key = $node->name;
         $value = $this->resolve($key);
-        if ($ref instanceof SimpleReference) {
-            return $value ?? '';
-        }
-        return match ($ref->op) {
+        return match ($node->operator) {
             ExpansionOperator::Minus => match ($value) {
-                null => $this->evaluateExpression($ref->rhs),
+                null => $this->evaluateExpression($node->value),
                 default => $value,
             },
             ExpansionOperator::ColonMinus => match ($value) {
-                '', null => $this->evaluateExpression($ref->rhs),
+                '', null => $this->evaluateExpression($node->value),
                 default => $value,
             },
             ExpansionOperator::Equal => match ($value) {
-                null => $this->scope[$key] = $this->evaluateExpression($ref->rhs),
+                null => $this->scope[$key] = $this->evaluateExpression($node->value),
                 default => $value,
             },
             ExpansionOperator::ColonEqual => match ($value) {
-                '', null => $this->scope[$key] = $this->evaluateExpression($ref->rhs),
+                '', null => $this->scope[$key] = $this->evaluateExpression($node->value),
                 default => $value,
             },
             ExpansionOperator::Plus => match ($value) {
                 null => '',
-                default => $this->evaluateExpression($ref->rhs),
+                default => $this->evaluateExpression($node->value),
             },
             ExpansionOperator::ColonPlus => match ($value) {
                 '', null => '',
-                default => $this->evaluateExpression($ref->rhs),
+                default => $this->evaluateExpression($node->value),
             },
             ExpansionOperator::Question => match ($value) {
-                null => throw UndefinedVariable::of($key, $this->evaluateExpression($ref->rhs)),
+                null => throw UndefinedVariable::of($key, $this->evaluateExpression($node->value)),
                 default => $value,
             },
             ExpansionOperator::ColonQuestion => match ($value) {
-                null, '' => throw UndefinedVariable::of($key, $this->evaluateExpression($ref->rhs)),
+                null, '' => throw UndefinedVariable::of($key, $this->evaluateExpression($node->value)),
                 default => $value,
             },
         };

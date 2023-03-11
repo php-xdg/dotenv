@@ -5,11 +5,8 @@ namespace Xdg\Dotenv\Parser;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\Ast\Assignment;
 use Xdg\Dotenv\Parser\Ast\AssignmentList;
-use Xdg\Dotenv\Parser\Ast\ComplexReference;
-use Xdg\Dotenv\Parser\Ast\CompositeValue;
+use Xdg\Dotenv\Parser\Ast\Expansion;
 use Xdg\Dotenv\Parser\Ast\ExpansionOperator;
-use Xdg\Dotenv\Parser\Ast\SimpleReference;
-use Xdg\Dotenv\Parser\Ast\SimpleValue;
 
 final class Parser
 {
@@ -35,44 +32,41 @@ final class Parser
 
     private function parseAssignment(): Assignment
     {
-        $name = $this->expect(TokenKind::Assign)->value;
-        switch ($this->tokens->current()->kind) {
-            case TokenKind::EOF:
-            case TokenKind::Assign:
-                return new Assignment($name, null);
-            default:
-                $value = $this->parseAssignmentValue();
-                return new Assignment($name, $value);
-        }
+        $token = $this->tokens->current();
+        return match ($token->kind) {
+            TokenKind::Assign => new Assignment($token->value, $this->parseAssignmentValue()),
+            default => throw $this->unexpected($token, TokenKind::Assign),
+        };
     }
 
-    private function parseAssignmentValue(): SimpleValue|CompositeValue|SimpleReference|ComplexReference
+    /**
+     * @return array<string|Expansion>
+     */
+    private function parseAssignmentValue(): array
     {
         $nodes = [];
         while (true) {
+            $this->tokens->next();
             $token = $this->tokens->current();
             switch ($token->kind) {
                 case TokenKind::EOF:
                 case TokenKind::Assign:
-                    return self::createValue($nodes);
+                    return $nodes;
                 case TokenKind::Characters:
-                    $this->tokens->next();
-                    $nodes[] = new SimpleValue($token->value);
+                    $nodes[] = $token->value;
                     break;
                 case TokenKind::SimpleExpansion:
-                    $this->tokens->next();
-                    $nodes[] = new SimpleReference($token->value);
+                    $nodes[] = new Expansion($token->value);
                     break;
                 case TokenKind::StartExpansion:
-                    $this->tokens->next();
-                    $op = $this->expect(TokenKind::ExpansionOperator)->value;
-                    $rhs = $this->parseExpansionArguments();
-                    $nodes[] = new ComplexReference($token->value, ExpansionOperator::from($op), $rhs);
+                    $op = $this->parseExpansionOperator();
+                    $rhs = $this->parseExpansionValue();
+                    $nodes[] = new Expansion($token->value, $op, $rhs);
                     break;
                 default:
-                    throw ParseError::unexpectedToken(
+                    throw $this->unexpected(
                         $token,
-                        $this->tokenizer->getPosition($token->offset),
+                        TokenKind::Assign,
                         TokenKind::Characters,
                         TokenKind::SimpleExpansion,
                         TokenKind::StartExpansion,
@@ -81,33 +75,42 @@ final class Parser
         }
     }
 
-    private function parseExpansionArguments(): SimpleValue|CompositeValue|SimpleReference|ComplexReference
+    private function parseExpansionOperator(): ExpansionOperator
+    {
+        $this->tokens->next();
+        $token = $this->tokens->current();
+        return match ($token->kind) {
+            TokenKind::ExpansionOperator => ExpansionOperator::from($token->value),
+            default => throw $this->unexpected($token, TokenKind::ExpansionOperator),
+        };
+    }
+
+    /**
+     * @return array<string|Expansion>
+     */
+    private function parseExpansionValue(): array
     {
         $nodes = [];
         while (true) {
+            $this->tokens->next();
             $token = $this->tokens->current();
             switch ($token->kind) {
                 case TokenKind::EndExpansion:
-                    $this->tokens->next();
-                    return self::createValue($nodes);
+                    return $nodes;
                 case TokenKind::Characters:
-                    $this->tokens->next();
-                    $nodes[] = new SimpleValue($token->value);
+                    $nodes[] = $token->value;
                     break;
                 case TokenKind::SimpleExpansion:
-                    $this->tokens->next();
-                    $nodes[] = new SimpleReference($token->value);
+                    $nodes[] = new Expansion($token->value);
                     break;
                 case TokenKind::StartExpansion:
-                    $this->tokens->next();
-                    $op = $this->expect(TokenKind::ExpansionOperator)->value;
-                    $rhs = $this->parseExpansionArguments();
-                    $nodes[] = new ComplexReference($token->value, ExpansionOperator::from($op), $rhs);
+                    $op = $this->parseExpansionOperator();
+                    $rhs = $this->parseExpansionValue();
+                    $nodes[] = new Expansion($token->value, $op, $rhs);
                     break;
                 default:
-                    throw ParseError::unexpectedToken(
+                    throw $this->unexpected(
                         $token,
-                        $this->tokenizer->getPosition($token->offset),
                         TokenKind::Characters,
                         TokenKind::SimpleExpansion,
                         TokenKind::StartExpansion,
@@ -117,22 +120,8 @@ final class Parser
         }
     }
 
-    private static function createValue(array $nodes): SimpleValue|CompositeValue|SimpleReference|ComplexReference
+    private function unexpected(Token $token, TokenKind ...$expected): ParseError
     {
-        return match (\count($nodes)) {
-            0 => new SimpleValue(''),
-            1 => $nodes[0],
-            default => new CompositeValue($nodes),
-        };
-    }
-
-    private function expect(TokenKind $kind): Token
-    {
-        $token = $this->tokens->current();
-        if ($token->kind !== $kind) {
-            throw ParseError::unexpectedToken($token, $this->tokenizer->getPosition($token->offset), $kind);
-        }
-        $this->tokens->next();
-        return $token;
+        return ParseError::unexpectedToken($token, $this->tokenizer->getPosition($token->offset), ...$expected);
     }
 }

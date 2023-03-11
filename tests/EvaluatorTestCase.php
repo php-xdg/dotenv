@@ -5,12 +5,8 @@ namespace Xdg\Dotenv\Tests;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Xdg\Dotenv\Evaluator\Evaluator;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Exception\UndefinedVariable;
-use Xdg\Dotenv\Parser\Parser;
-use Xdg\Dotenv\Parser\Tokenizer;
-use Xdg\Environment\Provider\ArrayProvider;
 
 abstract class EvaluatorTestCase extends TestCase
 {

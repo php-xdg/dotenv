@@ -2,7 +2,7 @@
 
 namespace Xdg\Dotenv\Parser\Ast;
 
-final class AssignmentList extends Node
+final class AssignmentList
 {
     public function __construct(
         /** @var Assignment[] */

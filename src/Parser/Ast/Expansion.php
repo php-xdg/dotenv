@@ -2,11 +2,12 @@
 
 namespace Xdg\Dotenv\Parser\Ast;
 
-final class Assignment
+final class Expansion
 {
     public function __construct(
         public readonly string $name,
-        /** @var array<string|Expansion> */
+        public readonly ExpansionOperator $operator = ExpansionOperator::Minus,
+        /** @var array<string|Expansion> $value */
         public readonly array $value = [],
     ) {
     }

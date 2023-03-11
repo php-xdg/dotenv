@@ -58,7 +58,6 @@ Please refer to:
 * Otherwise:
   * Let `node-list` be the value of the node's `value` attribute
   * Let `value` be the result of [evaluating an expression](#evaluating-an-expression) with `node-list`
-* `local-scope`->set(name, value)
 * [Update the local scope](#update-the-local-scope) with (`name`, `value`).
 
 ### Evaluating an expression
