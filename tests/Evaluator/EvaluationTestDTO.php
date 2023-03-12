@@ -10,7 +10,7 @@ final class EvaluationTestDTO
     public function __construct(
         public readonly string $desc,
         public readonly string $input,
-        public readonly array $scope = [],
+        public readonly array $env = [],
         public readonly bool $override = false,
         public readonly array $expected = [],
         public readonly ?string $error = null,

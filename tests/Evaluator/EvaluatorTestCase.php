@@ -19,7 +19,7 @@ abstract class EvaluatorTestCase extends TestCase
         if ($dto->error) {
             $this->expectException($dto->error);
         }
-        $result = static::evaluate($dto->input, $dto->scope, $dto->override);
+        $result = static::evaluate($dto->input, $dto->env, $dto->override);
         if (!$dto->error) {
             Assert::assertEquals($dto->expected, $result);
         }

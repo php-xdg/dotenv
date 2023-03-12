@@ -16,7 +16,7 @@
       "b": "",
       "c": "1"
     },
-    "scope": {
+    "env": {
       "a": "42"
     },
     "desc": ":- operator falls back to provided default"
@@ -26,7 +26,7 @@
     "expected": {
       "a": "42"
     },
-    "scope": {
+    "env": {
       "a": ""
     },
     "override": true,
@@ -37,7 +37,7 @@
     "expected": {
       "a": "foobarbaz"
     },
-    "scope": {
+    "env": {
       "c": "bar"
     },
     "desc": ":- operator supports recursive expansion"
@@ -69,7 +69,7 @@
   },
   {
     "input": "a=${foo:+${bar:?Error!}}",
-    "scope": {
+    "env": {
       "foo": ""
     },
     "expected": {

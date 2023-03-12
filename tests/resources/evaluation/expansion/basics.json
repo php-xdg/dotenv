@@ -45,7 +45,7 @@
       "c": "1",
       "d": "$a"
     },
-    "scope": {},
+    "env": {},
     "desc": "picks value from local scope when not present in global"
   },
   {
@@ -56,7 +56,7 @@
       "c": "0",
       "d": "$a"
     },
-    "scope": {
+    "env": {
       "a": "0"
     },
     "desc": "golbal scope wins over local scope"
@@ -68,7 +68,7 @@
       "b": "1",
       "c": "$b"
     },
-    "scope": {
+    "env": {
       "b": "1"
     },
     "desc": "picks value from global scope when not present in local"
