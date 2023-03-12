@@ -1,10 +1,13 @@
 # Evaluation
 
-Implementations must act as if they used the following algorithm to evaluate POSIX-compliant dotenv files.
+Implementations must act as if they used [the following algorithm](#evaluation-algorithm)
+to evaluate POSIX-compliant dotenv files.
 
 The inputs to the evaluation stage are:
 * a sequence of nodes from the [parsing](parsing.md) stage
 * an optional [override flag](#override-flag)
+
+The output of the evaluation stage is the result of [evaluating an assignment list](#evaluating-an-assignment-list).
 
 
 ## Definitions
@@ -37,6 +40,9 @@ Please refer to:
 * The [POSIX specification](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap08.html).
 * The [article on wikipedia](https://en.wikipedia.org/wiki/Environment_variable).
 
+An environment variable named `name` is defined if calling
+[getenv](https://pubs.opengroup.org/onlinepubs/9699919799/functions/getenv.html) with `name`
+does not return a null pointer.
 
 ## Evaluation algorithm
 
@@ -53,7 +59,7 @@ Please refer to:
 
 * Let `name` be the value of the node's `name` attribute 
 * If the [override flag](#override-flag) is `false`,
-  and an [environment variable](#environment-variable) named `name` is set:
+  and an [environment variable](#environment-variable) named `name` is defined:
   * Let `value` be the value of the environment variable named `name`
 * Otherwise:
   * Let `node-list` be the value of the node's `value` attribute
@@ -128,12 +134,12 @@ Please refer to:
 * If the [override flag](#override-flag) is `true`:
   * If the [local scope](#local-scope) contains a key for `name`:
     * return the value associated with the key for `name` in the [local scope](#local-scope)
-  * Otherwise, if an [environment variable](#environment-variable) named `name` is set:
+  * Otherwise, if an [environment variable](#environment-variable) named `name` is defined:
     * return the value of this environment variable.
   * Otherwise:
     * return [undefined](#undefined)
 * Otherwise:
-  * If an [environment variable](#environment-variable) named `name` is set:
+  * If an [environment variable](#environment-variable) named `name` is defined:
     * return the value of this environment variable.
   * Otherwise, if the [local scope](#local-scope) contains a key for `name`:
     * return the value associated with the key for `name` in the [local scope](#local-scope)

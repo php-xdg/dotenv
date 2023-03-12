@@ -1,6 +1,7 @@
 # Tokenization
 
-Implementations must act as if they used the following state machine to tokenize POSIX-compliant dotenv files.
+Implementations must act as if they used [the following state machine](#state-machine)
+to tokenize POSIX-compliant dotenv files.
 
 The state machine must start in the [assignment list state](#assignment-list-state).
 
@@ -38,29 +39,31 @@ The temporary buffer is a string of codepoints that is initially empty.
 
 When a state says to flush the temporary buffer:
 
-1. If the [temporary buffer](#temporary-buffer) is not empty:
-   * Create a new token.
-   * If the state says to flush the temporary buffer as a `<kind>` token, set the token's kind to the specified kind.
-     Otherwise, set the token's kind to `Characters`.
-   * Set the token's value to the contents of the temporary buffer.
-   * Emit the newly created token.
-2. Set the [temporary buffer](#temporary-buffer) to the empty string.
+* If the [temporary buffer](#temporary-buffer) is not empty:
+  * Create a new token.
+  * If the state says to flush the temporary buffer as a `<kind>` token, set the token's kind to the specified kind.
+    Otherwise, set the token's kind to `Characters`.
+  * Set the token's value to the contents of the temporary buffer.
+  * Emit the newly created token.
+  * Set the [temporary buffer](#temporary-buffer) to the empty string.
 
 ### Stack of return states
 
-The stack of return states is a stack of states, used in some states to return to the state they were invoked from.
+The stack of return states is a stack of states,
+used in some states to return to the state they were invoked from.
 It is initially empty.
 
 ### Return state
 
-The return state is the state that is currently on top of the [stack of return states](#stack-of-return-states).
+The return state is the state that is currently
+on top of the [stack of return states](#stack-of-return-states).
 
 When a state says to switch to the return state:
 
 * pop a state off the stack of return states
 * switch to the state returned by the previous step
 
-When a state says to reconsume the return state:
+When a state says to reconsume in the return state:
 
 * pop a state off the stack of return states
 * [reconsume](#reconsume) in the state returned by the previous step
@@ -68,8 +71,12 @@ When a state says to reconsume the return state:
 ### Quoting level
 
 The quoting level is an unsigned integer that is initially zero.
-When a state says to increment the quoting level, set the quoting level to its current value plus one.
-When a state says to decrement the quoting level, set the quoting level to its current value minus one.
+
+When a state says to increment the quoting level,
+set the quoting level to its current value plus one.
+
+When a state says to decrement the quoting level,
+set the quoting level to its current value minus one.
 
 ### ASCII upper alpha
 
@@ -81,7 +88,8 @@ An ASCII lower alpha is a code point in the range U+0061 (a) to U+007A (z), incl
 
 ### ASCII alpha
 
-An ASCII alpha is an [ASCII upper alpha](#ascii-upper-alpha) or [ASCII lower alpha](#ascii-lower-alpha).
+An ASCII alpha is an [ASCII upper alpha](#ascii-upper-alpha)
+or [ASCII lower alpha](#ascii-lower-alpha).
 
 ### ASCII digit
 

@@ -36,9 +36,9 @@ The current token is the last token to have been consumed.
 
 ### Parsing an assignment
 
-* Create a new Assignment node.
-* set the node's name attribute to the [current token](#current-token)'s value.
-* set the node's value attribute to the result of [parsing an assignment value](#parsing-an-assignment-value).
+* Create a new `Assignment` node.
+* set the node's `name` attribute to the [current token](#current-token)'s value.
+* set the node's `value` attribute to the result of [parsing an assignment value](#parsing-an-assignment-value).
 * return the node.
 
 ### Parsing an assignment value
@@ -50,7 +50,7 @@ The current token is the last token to have been consumed.
       * return `node-list`.
     * `Characters`:
       * Create a new `Characters` node.
-      * set the node's value attribute to the [current token](#current-token)'s value.
+      * set the node's `value` attribute to the [current token](#current-token)'s value.
       * append the newly created node to `node-list`.
     * `SimpleExpansion`:
       * Create a new `Expansion` node.
