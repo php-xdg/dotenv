@@ -14,6 +14,11 @@ final class ParseError extends \RuntimeException implements DotenvException
         return new self($message . " on line {$pos->line}, column {$pos->column}.");
     }
 
+    public static function atPos(string $message, SourcePosition $pos): self
+    {
+        return new self($message . " on line {$pos->line}, column {$pos->column}.");
+    }
+
     public static function unexpectedToken(Token $token, SourcePosition $pos, TokenKind ...$expectedKinds): self
     {
         $message = sprintf(

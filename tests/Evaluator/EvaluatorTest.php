@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Xdg\Dotenv\Tests;
+namespace Xdg\Dotenv\Tests\Evaluator;
 
 use Xdg\Dotenv\Evaluator\Evaluator;
 use Xdg\Dotenv\Parser\Parser;

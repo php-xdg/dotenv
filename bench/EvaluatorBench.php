@@ -8,30 +8,32 @@ use PhpBench\Attributes\OutputTimeUnit;
 use PhpBench\Attributes\RetryThreshold;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Subject;
+use Xdg\Dotenv\Evaluator\Evaluator;
+use Xdg\Dotenv\Evaluator\TokenEvaluator;
 use Xdg\Dotenv\Parser\Parser;
 use Xdg\Dotenv\Parser\Tokenizer;
-use Xdg\Dotenv\Tests\Specification\ReferenceParser;
 
 #[RetryThreshold(2.0)]
 #[Iterations(10)]
 #[Revs(100)]
 #[OutputMode('throughput')]
 #[OutputTimeUnit('seconds')]
-final class ParserBench
+final class EvaluatorBench
 {
     #[Subject]
-    public function default(): void
+    public function ast(): void
     {
         $input = file_get_contents(__DIR__.'/resources/big.env');
+        $evaluator = new Evaluator();
         $parser = new Parser(new Tokenizer($input));
-        $ast = $parser->parse();
+        $result = $evaluator->evaluate($parser->parse());
     }
 
     #[Subject]
-    public function spec(): void
+    public function tokens(): void
     {
         $input = file_get_contents(__DIR__.'/resources/big.env');
-        $parser = new ReferenceParser(new Tokenizer($input));
-        $ast = $parser->parse();
+        $evaluator = new TokenEvaluator();
+        $result = $evaluator->evaluate(new Tokenizer($input));
     }
 }

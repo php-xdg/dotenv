@@ -2,7 +2,7 @@
 
 namespace Xdg\Dotenv\Tests\Specification;
 
-use Xdg\Dotenv\Tests\EvaluatorTestCase;
+use Xdg\Dotenv\Tests\Evaluator\EvaluatorTestCase;
 
 final class ReferenceEvaluatorTest extends EvaluatorTestCase
 {

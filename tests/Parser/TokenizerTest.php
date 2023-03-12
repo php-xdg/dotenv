@@ -12,7 +12,6 @@ use Xdg\Dotenv\Parser\Tokenizer;
 use Xdg\Dotenv\Parser\TokenKind;
 use Xdg\Dotenv\Tests\ResourceHelper;
 use Xdg\Dotenv\Tests\Specification\ReferenceTokenizer;
-use Xdg\Dotenv\Tests\TokenizationTestDTO;
 
 final class TokenizerTest extends TestCase
 {

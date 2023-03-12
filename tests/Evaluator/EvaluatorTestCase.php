@@ -1,12 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Xdg\Dotenv\Tests;
+namespace Xdg\Dotenv\Tests\Evaluator;
 
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Exception\UndefinedVariable;
+use Xdg\Dotenv\Tests\ResourceHelper;
 
 abstract class EvaluatorTestCase extends TestCase
 {

@@ -59,5 +59,22 @@
       "d": "foobarbaz"
     },
     "desc": ":= operator supports recursive expansion"
+  },
+  {
+    "input": "a=${a+${b:?Error!}}",
+    "expected": {
+      "a": ""
+    },
+    "desc": "+ operator skips over nested expansions"
+  },
+  {
+    "input": "a=${foo:+${bar:?Error!}}",
+    "scope": {
+      "foo": ""
+    },
+    "expected": {
+      "a": ""
+    },
+    "desc": ":+ operator skips over nested expansions"
   }
 ]
