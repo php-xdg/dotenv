@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Exception\UndefinedVariable;
 use Xdg\Dotenv\Tests\ResourceHelper;
+use Xdg\Dotenv\Tests\SpecResourceHelper;
 
 abstract class EvaluatorTestCase extends TestCase
 {
@@ -27,7 +28,7 @@ abstract class EvaluatorTestCase extends TestCase
 
     public static function specFilesProvider(): iterable
     {
-        foreach (ResourceHelper::glob('evaluation/*/*.json') as $file) {
+        foreach (SpecResourceHelper::glob('evaluation/*/*.json') as $file) {
             $blob = file_get_contents($file);
             $dir = basename(dirname($file));
             $name = basename($file);

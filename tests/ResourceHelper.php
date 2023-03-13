@@ -2,11 +2,13 @@
 
 namespace Xdg\Dotenv\Tests;
 
-final class ResourceHelper
+class ResourceHelper
 {
+    protected const ROOT = __DIR__ . '/resources';
+
     public static function path(string $relPath): string
     {
-        return __DIR__ . '/resources/' . ltrim($relPath, '/');
+        return static::ROOT . '/' . ltrim($relPath, '/');
     }
 
     public static function glob(string $pattern): array

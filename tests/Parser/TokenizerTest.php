@@ -10,8 +10,8 @@ use Xdg\Dotenv\Parser\SourcePosition;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\Tokenizer;
 use Xdg\Dotenv\Parser\TokenKind;
-use Xdg\Dotenv\Tests\ResourceHelper;
 use Xdg\Dotenv\Tests\Specification\ReferenceTokenizer;
+use Xdg\Dotenv\Tests\SpecResourceHelper;
 
 final class TokenizerTest extends TestCase
 {
@@ -45,7 +45,7 @@ final class TokenizerTest extends TestCase
 
     public static function specificationProvider(): iterable
     {
-        foreach (ResourceHelper::glob('tokenization/*.json') as $file) {
+        foreach (SpecResourceHelper::glob('tokenization/*.json') as $file) {
             $cases = json_decode(file_get_contents($file), true, 512, \JSON_THROW_ON_ERROR);
             $fileName = basename($file);
             foreach ($cases as $i => $case) {
