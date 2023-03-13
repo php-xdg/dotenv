@@ -14,6 +14,15 @@ use Xdg\Environment\Provider\ServerSuperGlobalProvider;
 
 final class XdgDotenv
 {
+    /**
+     * Loads environment variables from the specified set of files,
+     * and exports them into the current process's environment.
+     *
+     * @param string|string[] $files The file path(s) to load.
+     * @param bool $override Whether to override existing environment variables.
+     * @param EnvironmentProviderInterface|null $env An environment provider, or null to use the default provider.
+     * @return array<string, string> The environment variables defined in the specified files.
+     */
     public static function load(
         array|string $files,
         bool $override = false,
@@ -29,6 +38,15 @@ final class XdgDotenv
         return $scope;
     }
 
+    /**
+     * Evaluates the specified set of files,
+     * and returns the environment variables defined in those files as an associative array.
+     *
+     * @param string|string[] $files The file path(s) to load.
+     * @param bool $override Whether to override existing environment variables.
+     * @param EnvironmentProviderInterface|null $env An environment provider, or null to use the default provider.
+     * @return array<string, string> The environment variables defined in the specified files.
+     */
     public static function evaluate(
         array|string $files,
         bool $override = false,
