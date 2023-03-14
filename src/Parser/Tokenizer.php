@@ -214,7 +214,7 @@ final class Tokenizer implements TokenizerInterface
                             }
                             yield from $this->flushTheTemporaryBuffer();
                             // simple expansion state
-                            yield new Token(TokenKind::SimpleExpansion, $m[0], $this->pos);
+                            yield new Token(TokenKind::SimpleExpansion, $m[0], $this->pos - 1);
                             $this->pos += \strlen($m[0]);
                             $this->state = $this->returnStates->pop();
                             goto RECONSUME;
@@ -244,12 +244,12 @@ final class Tokenizer implements TokenizerInterface
             case TokenizerState::ComplexExpansion: {
                 switch ($cc) {
                     case '}':
-                        yield from $this->flushTheTemporaryBuffer(TokenKind::SimpleExpansion);
+                        yield from $this->flushTheTemporaryBuffer(TokenKind::SimpleExpansion, -1);
                         $this->state = $this->returnStates->pop();
                         goto ADVANCE;
                     default:
                         if (preg_match('/:?[?=+-]/A', $this->input, $m, 0, $this->pos)) {
-                            yield from $this->flushTheTemporaryBuffer(TokenKind::StartExpansion);
+                            yield from $this->flushTheTemporaryBuffer(TokenKind::StartExpansion, -1);
                             // expansion operator state
                             yield new Token(TokenKind::ExpansionOperator, $m[0], $this->pos);
                             $this->pos += \strlen($m[0]);
@@ -332,10 +332,10 @@ final class Tokenizer implements TokenizerInterface
         }
     }
 
-    private function flushTheTemporaryBuffer(TokenKind $kind = TokenKind::Characters): iterable
+    private function flushTheTemporaryBuffer(TokenKind $kind = TokenKind::Characters, int $offset = 0): iterable
     {
         if ($this->buffer->value !== '') {
-            yield new Token($kind, $this->buffer->value, $this->buffer->offset);
+            yield new Token($kind, $this->buffer->value, $this->buffer->offset + $offset);
         }
         $this->buffer->value = '';
         $this->buffer->offset = $this->pos;

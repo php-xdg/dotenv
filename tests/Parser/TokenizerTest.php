@@ -94,4 +94,54 @@ final class TokenizerTest extends TestCase
             ],
         ];
     }
+
+    #[DataProvider('tokenOffsetsProvider')]
+    public function testTokenOffsets(string $input, array $expected): void
+    {
+        $tokenizer = new Tokenizer($input);
+        $tokens = iterator_to_array($tokenizer->tokenize(), false);
+        Assert::assertEquals($expected, $tokens);
+    }
+
+    public static function tokenOffsetsProvider(): iterable
+    {
+        yield [
+            "# a\nb=c",
+            [
+                new Token(TokenKind::Assign, 'b', 4),
+                new Token(TokenKind::Characters, 'c', 6),
+                new Token(TokenKind::EOF, '', 7),
+            ],
+        ];
+        yield [
+            'a=b\'c\'"d"',
+            [
+                new Token(TokenKind::Assign, 'a', 0),
+                new Token(TokenKind::Characters, 'bcd', 2),
+                new Token(TokenKind::EOF, '', 9),
+            ]
+        ];
+        yield [
+            'a=b"c" b="c"d',
+            [
+                new Token(TokenKind::Assign, 'a', 0),
+                new Token(TokenKind::Characters, 'bc', 2),
+                new Token(TokenKind::Assign, 'b', 7),
+                new Token(TokenKind::Characters, 'cd', 9),
+                new Token(TokenKind::EOF, '', 13),
+            ]
+        ];
+        yield [
+            'a=b"$c" b="c"${d}',
+            [
+                new Token(TokenKind::Assign, 'a', 0),
+                new Token(TokenKind::Characters, 'b', 2),
+                new Token(TokenKind::SimpleExpansion, 'c', 4),
+                new Token(TokenKind::Assign, 'b', 8),
+                new Token(TokenKind::Characters, 'c', 10),
+                new Token(TokenKind::SimpleExpansion, 'd', 13),
+                new Token(TokenKind::EOF, '', 17),
+            ]
+        ];
+    }
 }
