@@ -28,6 +28,6 @@
   },
   "require": {
     "php": ">=8.1",
-    "xdg/environment": "^2.0"
+    "xdg/environment": "^2.1"
   }
 }

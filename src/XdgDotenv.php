@@ -9,7 +9,7 @@ use Xdg\Dotenv\Parser\Tokenizer;
 use Xdg\Environment\EnvironmentProviderInterface;
 use Xdg\Environment\Provider\ChainProvider;
 use Xdg\Environment\Provider\EnvSuperGlobalProvider;
-use Xdg\Environment\Provider\GetenvProvider;
+use Xdg\Environment\Provider\ReadonlyGetenvProvider;
 use Xdg\Environment\Provider\ServerSuperGlobalProvider;
 
 final class XdgDotenv
@@ -73,7 +73,7 @@ final class XdgDotenv
         return new ChainProvider(
             new EnvSuperGlobalProvider(false),
             new ServerSuperGlobalProvider(false),
-            new GetenvProvider(false),
+            new ReadonlyGetenvProvider(false),
         );
     }
 }
