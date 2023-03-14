@@ -144,4 +144,25 @@ final class TokenizerTest extends TestCase
             ]
         ];
     }
+
+    #[DataProvider('errorPositionsProvider')]
+    public function testErrorPositions(string $input, int $line, int $col): void
+    {
+        $this->expectExceptionMessage("on line {$line}, column {$col}");
+        $tokenizer = new Tokenizer($input);
+        $tokens = iterator_to_array($tokenizer->tokenize(), false);
+    }
+
+    public static function errorPositionsProvider(): iterable
+    {
+        yield 'unterminated single-quoted string' => [
+            "A=\nB=foo'bar", 2, 6,
+        ];
+        yield 'unterminated double-quoted string' => [
+            'a=foo"${b-"bar"}', 1, 6,
+        ];
+        yield 'unterminated expansion' => [
+            "A=\nB=\nC=\${foo-\${bar}", 3, 4,
+        ];
+    }
 }

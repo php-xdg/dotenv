@@ -11,7 +11,6 @@ use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Subject;
 use Xdg\Dotenv\Parser\Parser;
 use Xdg\Dotenv\Parser\Tokenizer;
-use Xdg\Dotenv\Tests\Specification\ReferenceParser;
 
 #[RetryThreshold(2.0)]
 #[Iterations(10)]
@@ -25,14 +24,6 @@ final class ParserBench
     public function default($args): void
     {
         $parser = new Parser(new Tokenizer($args[0]));
-        $ast = $parser->parse();
-    }
-
-    #[Subject]
-    #[ParamProviders(['inputProvider'])]
-    public function spec($args): void
-    {
-        $parser = new ReferenceParser(new Tokenizer($args[0]));
         $ast = $parser->parse();
     }
 

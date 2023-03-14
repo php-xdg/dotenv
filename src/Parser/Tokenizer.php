@@ -8,9 +8,6 @@ final class Tokenizer implements TokenizerInterface
 {
     private int $pos = -1;
     private Buffer $buffer;
-    private int $quotingLevel = 0;
-
-    private \SplStack $returnStates;
 
     private const EXPANSION_RX = <<<'REGEXP'
     /
@@ -32,8 +29,12 @@ final class Tokenizer implements TokenizerInterface
 
     public function tokenize(): \Iterator
     {
-        $this->returnStates = new \SplStack();
         $this->buffer = new Buffer(0);
+        $returnStates = new \SplStack();
+        // error position tracking
+        $lastOpenedSingleQuote = 0;
+        $quotingStack = new \SplStack();
+        $expansionStack = new \SplStack();
 
         ADVANCE: ++$this->pos;
         RECONSUME: $cc = $this->input[$this->pos] ?? '';
@@ -81,12 +82,13 @@ final class Tokenizer implements TokenizerInterface
                         $this->state = TokenizerState::AssignmentValueEscape;
                         goto ADVANCE;
                     case "'":
-                        $this->returnStates->push($this->state);
+                        $lastOpenedSingleQuote = $this->pos;
+                        $returnStates->push($this->state);
                         $this->state = TokenizerState::SingleQuoted;
                         goto ADVANCE;
                     case '"':
-                        $this->returnStates->push($this->state);
-                        ++$this->quotingLevel;
+                        $returnStates->push($this->state);
+                        $quotingStack->push($this->pos);
                         $this->state = TokenizerState::DoubleQuoted;
                         goto ADVANCE;
                     case '`':
@@ -100,7 +102,7 @@ final class Tokenizer implements TokenizerInterface
                     case ')':
                         throw ParseError::at("Unescaped special character '{$cc}'", $this->input, $this->pos);
                     case '$':
-                        $this->returnStates->push($this->state);
+                        $returnStates->push($this->state);
                         $this->state = TokenizerState::Dollar;
                         goto ADVANCE;
                     default:
@@ -130,10 +132,9 @@ final class Tokenizer implements TokenizerInterface
             SINGLE_QUOTED: {
                 switch ($cc) {
                     case '':
-                        // TODO: properly track the error offset
-                        throw ParseError::at('Unterminated single-quoted string', $this->input, $this->buffer->offset);
+                        throw ParseError::at('Unterminated single-quoted string', $this->input, $lastOpenedSingleQuote);
                     case "'":
-                        $this->state = $this->returnStates->pop();
+                        $this->state = $returnStates->pop();
                         goto ADVANCE;
                     default:
                         preg_match("/[^']+/A", $this->input, $m, 0, $this->pos);
@@ -148,18 +149,18 @@ final class Tokenizer implements TokenizerInterface
                 switch ($cc) {
                     case '':
                         // TODO: properly track the error offset
-                        throw ParseError::at('Unterminated double-quoted string', $this->input, $this->buffer->offset);
+                        throw ParseError::at('Unterminated double-quoted string', $this->input, $quotingStack->top());
                     case '`':
                         throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case '"':
-                        --$this->quotingLevel;
-                        $this->state = $this->returnStates->pop();
+                        $quotingStack->pop();
+                        $this->state = $returnStates->pop();
                         goto ADVANCE;
                     case '\\':
                         $this->state = TokenizerState::DoubleQuotedEscape;
                         goto ADVANCE;
                     case '$':
-                        $this->returnStates->push($this->state);
+                        $returnStates->push($this->state);
                         $this->state = TokenizerState::Dollar;
                         goto ADVANCE;
                     default:
@@ -200,6 +201,7 @@ final class Tokenizer implements TokenizerInterface
                         };
                         throw ParseError::at("Unsupported {$type} expansion", $this->input, $this->pos);
                     case '{':
+                        $expansionStack->push($this->pos);
                         yield from $this->flushTheTemporaryBuffer();
                         $this->state = TokenizerState::ComplexExpansionStart;
                         goto ADVANCE;
@@ -216,11 +218,11 @@ final class Tokenizer implements TokenizerInterface
                             // simple expansion state
                             yield new Token(TokenKind::SimpleExpansion, $m[0], $this->pos - 1);
                             $this->pos += \strlen($m[0]);
-                            $this->state = $this->returnStates->pop();
+                            $this->state = $returnStates->pop();
                             goto RECONSUME;
                         }
                         $this->buffer->value .= '$';
-                        $this->state = $this->returnStates->pop();
+                        $this->state = $returnStates->pop();
                         goto RECONSUME;
                 }
             }
@@ -244,8 +246,9 @@ final class Tokenizer implements TokenizerInterface
             case TokenizerState::ComplexExpansion: {
                 switch ($cc) {
                     case '}':
+                        $expansionStack->pop();
                         yield from $this->flushTheTemporaryBuffer(TokenKind::SimpleExpansion, -1);
-                        $this->state = $this->returnStates->pop();
+                        $this->state = $returnStates->pop();
                         goto ADVANCE;
                     default:
                         if (preg_match('/:?[?=+-]/A', $this->input, $m, 0, $this->pos)) {
@@ -262,32 +265,34 @@ final class Tokenizer implements TokenizerInterface
             case TokenizerState::ExpansionValue: {
                 switch ($cc) {
                     case '':
-                        throw ParseError::at('Unterminated expansion', $this->input, $this->pos);
+                        throw ParseError::at('Unterminated expansion', $this->input, $expansionStack->top());
                     case '`':
                         throw ParseError::at('Unsupported command expansion', $this->input, $this->pos);
                     case '}';
+                        $expansionStack->pop();
                         yield from $this->flushTheTemporaryBuffer();
                         yield new Token(TokenKind::EndExpansion, '}', $this->pos);
-                        $this->state = $this->returnStates->pop();
+                        $this->state = $returnStates->pop();
                         goto ADVANCE;
                     case '\\':
                         $this->state = TokenizerState::ExpansionValueEscape;
                         goto ADVANCE;
                     case "'":
-                        if ($this->quotingLevel > 0) {
+                        if (!$quotingStack->isEmpty()) {
                             $this->buffer->value .= $cc;
                             goto ADVANCE;
                         }
-                        $this->returnStates->push($this->state);
+                        $lastOpenedSingleQuote = $this->pos;
+                        $returnStates->push($this->state);
                         $this->state = TokenizerState::SingleQuoted;
                         goto ADVANCE;
                     case '"':
-                        $this->returnStates->push($this->state);
-                        ++$this->quotingLevel;
+                        $returnStates->push($this->state);
+                        $quotingStack->push($this->pos);
                         $this->state = TokenizerState::DoubleQuoted;
                         goto ADVANCE;
                     case '$':
-                        $this->returnStates->push($this->state);
+                        $returnStates->push($this->state);
                         $this->state = TokenizerState::Dollar;
                         goto ADVANCE;
                     default:
@@ -300,8 +305,7 @@ final class Tokenizer implements TokenizerInterface
             case TokenizerState::ExpansionValueEscape: {
                 switch ($cc) {
                     case '':
-                        // TODO: properly track the error offset
-                        throw ParseError::at('Unterminated expansion', $this->input, $this->pos);
+                        throw ParseError::at('Unterminated expansion', $this->input, $expansionStack->top());
                     case "\n":
                         $this->state = TokenizerState::ExpansionValue;
                         goto ADVANCE;
@@ -313,7 +317,7 @@ final class Tokenizer implements TokenizerInterface
                         $this->state = TokenizerState::ExpansionValue;
                         goto ADVANCE;
                     default:
-                        if ($this->quotingLevel > 0) {
+                        if (!$quotingStack->isEmpty()) {
                             $this->buffer->value .= '\\';
                         }
                         $this->buffer->value .= $cc;
