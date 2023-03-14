@@ -5,6 +5,7 @@ namespace Xdg\Dotenv\Benchmarks;
 use PhpBench\Attributes\Iterations;
 use PhpBench\Attributes\OutputMode;
 use PhpBench\Attributes\OutputTimeUnit;
+use PhpBench\Attributes\ParamProviders;
 use PhpBench\Attributes\RetryThreshold;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Subject;
@@ -21,19 +22,24 @@ use Xdg\Dotenv\Parser\Tokenizer;
 final class EvaluatorBench
 {
     #[Subject]
-    public function ast(): void
+    #[ParamProviders(['inputProvider'])]
+    public function ast($args): void
     {
-        $input = file_get_contents(__DIR__.'/resources/big.env');
         $evaluator = new Evaluator();
-        $parser = new Parser(new Tokenizer($input));
+        $parser = new Parser(new Tokenizer($args[0]));
         $result = $evaluator->evaluate($parser->parse());
     }
 
     #[Subject]
-    public function tokens(): void
+    #[ParamProviders(['inputProvider'])]
+    public function tokens($args): void
     {
-        $input = file_get_contents(__DIR__.'/resources/big.env');
         $evaluator = new TokenEvaluator();
-        $result = $evaluator->evaluate(new Tokenizer($input));
+        $result = $evaluator->evaluate(new Tokenizer($args[0]));
+    }
+
+    public static function inputProvider(): iterable
+    {
+        yield 'resources/big.env' => [file_get_contents(__DIR__.'/resources/big.env')];
     }
 }
