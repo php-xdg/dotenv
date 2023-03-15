@@ -3,6 +3,7 @@
 namespace Xdg\Dotenv\Parser;
 
 use Xdg\Dotenv\Exception\IOError;
+use Xdg\Dotenv\Exception\ParseError;
 
 final class Source
 {
@@ -10,6 +11,9 @@ final class Source
         public readonly string $bytes,
         public readonly string $filename,
     ) {
+        if (false !== $p = \strpos($this->bytes, "\x00")) {
+            throw ParseError::in($this, $p, 'Invalid <NUL> character');
+        }
     }
 
     public static function fromFile(string $path): self

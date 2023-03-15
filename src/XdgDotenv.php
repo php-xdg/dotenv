@@ -3,7 +3,6 @@
 namespace Xdg\Dotenv;
 
 use Xdg\Dotenv\Evaluator\Evaluator;
-use Xdg\Dotenv\Exception\IOError;
 use Xdg\Dotenv\Parser\Parser;
 use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Tokenizer;

@@ -5,7 +5,6 @@ namespace Xdg\Dotenv\Tests\Specification;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\Buffer;
 use Xdg\Dotenv\Parser\Source;
-use Xdg\Dotenv\Parser\SourcePosition;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\TokenizerInterface;
 use Xdg\Dotenv\Parser\TokenizerState;

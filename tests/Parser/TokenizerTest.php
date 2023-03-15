@@ -7,7 +7,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\Source;
-use Xdg\Dotenv\Parser\SourcePosition;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\Tokenizer;
 use Xdg\Dotenv\Parser\TokenKind;
@@ -20,10 +19,10 @@ final class TokenizerTest extends TestCase
     public function testSpecification(TokenizationTestDTO $dto): void
     {
         $tokenizer = new Tokenizer();
-        $src = Source::fromString($dto->input);
         if ($dto->error) {
             $this->expectException(ParseError::class);
         }
+        $src = Source::fromString($dto->input);
         $tokens = array_map(
             TokenizationTestDTO::convertToken(...),
             iterator_to_array($tokenizer->tokenize($src), false),
@@ -35,10 +34,10 @@ final class TokenizerTest extends TestCase
     public function testReferenceTokenizer(TokenizationTestDTO $dto): void
     {
         $tokenizer = new ReferenceTokenizer();
-        $src = Source::fromString($dto->input);
         if ($dto->error) {
             $this->expectException(ParseError::class);
         }
+        $src = Source::fromString($dto->input);
         $tokens = array_map(
             TokenizationTestDTO::convertToken(...),
             iterator_to_array($tokenizer->tokenize($src), false),

@@ -20,7 +20,7 @@ final class SourcePosition
         }
 
         $searchOffset = -(\strlen($input) - $offset);
-        if ($input[$offset] ?? '' === "\n") {
+        if (($input[$offset] ?? '') === "\n") {
             $searchOffset--;
         }
         $lastLineOffset = strrpos($input, "\n", $searchOffset);
