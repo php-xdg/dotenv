@@ -2,6 +2,7 @@
 
 namespace Xdg\Dotenv\Parser;
 
+use Iterator;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\Ast\Assignment;
 use Xdg\Dotenv\Parser\Ast\AssignmentList;
@@ -10,19 +11,21 @@ use Xdg\Dotenv\Parser\Ast\ExpansionOperator;
 
 final class Parser
 {
+    private Source $src;
     /**
-     * @var \Iterator<int, Token>
+     * @var Iterator<int, Token>
      */
-    private readonly \Iterator $tokens;
+    private Iterator $tokens;
 
     public function __construct(
         private readonly TokenizerInterface $tokenizer,
     ) {
     }
 
-    public function parse(): AssignmentList
+    public function parse(Source $src): AssignmentList
     {
-        $this->tokens = $this->tokenizer->tokenize();
+        $this->src = $src;
+        $this->tokens = $this->tokenizer->tokenize($src);
         $nodes = [];
         while ($this->tokens->current()->kind !== TokenKind::EOF) {
             $nodes[] = $this->parseAssignment();
@@ -122,6 +125,6 @@ final class Parser
 
     private function unexpected(Token $token, TokenKind ...$expected): ParseError
     {
-        return ParseError::unexpectedToken($token, $this->tokenizer->getPosition($token->offset), ...$expected);
+        return ParseError::unexpectedToken($this->src, $token, ...$expected);
     }
 }

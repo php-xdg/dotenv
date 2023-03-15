@@ -2,31 +2,26 @@
 
 namespace Xdg\Dotenv\Exception;
 
-use Xdg\Dotenv\Parser\SourcePosition;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\TokenKind;
 
 final class ParseError extends \RuntimeException implements DotenvException
 {
-    public static function at(string $message, string $input, int $offset): self
+    public static function in(Source $src, int $offset, string $message): self
     {
-        $pos = SourcePosition::fromOffset($input, $offset);
-        return new self($message . " on line {$pos->line}, column {$pos->column}.");
+        $pos = $src->getPosition($offset);
+        return new self(
+            $message . " in {$src->filename} on line {$pos->line}, column {$pos->column}."
+        );
     }
 
-    public static function atPos(string $message, SourcePosition $pos): self
-    {
-        return new self($message . " on line {$pos->line}, column {$pos->column}.");
-    }
-
-    public static function unexpectedToken(Token $token, SourcePosition $pos, TokenKind ...$expectedKinds): self
+    public static function unexpectedToken(Source $src, Token $token, TokenKind ...$expectedKinds): self
     {
         $message = sprintf(
-            'Unexpected token `%s` ("%s") on line %d, column %d',
+            'Unexpected token `%s` ("%s")',
             $token->kind->name,
             $token->value,
-            $pos->line,
-            $pos->column,
         );
         $message .= match (\count($expectedKinds)) {
             0 => '',
@@ -34,6 +29,6 @@ final class ParseError extends \RuntimeException implements DotenvException
             default => ', expected one of: ' . implode(', ', array_map(fn($k) => $k->name, $expectedKinds)),
         };
 
-        return new self($message);
+        return self::in($src, $token->offset, $message);
     }
 }

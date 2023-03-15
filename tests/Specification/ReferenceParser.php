@@ -2,23 +2,27 @@
 
 namespace Xdg\Dotenv\Tests\Specification;
 
+use Iterator;
 use Xdg\Dotenv\Exception\ParseError;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\TokenizerInterface;
 use Xdg\Dotenv\Parser\TokenKind;
 
 final class ReferenceParser
 {
-    /** @var \Iterator<int, Token> */
-    private readonly \Iterator $tokens;
+    private Source $src;
+    /** @var Iterator<int, Token> */
+    private readonly Iterator $tokens;
     public function __construct(
         private readonly TokenizerInterface $tokenizer,
     ) {
     }
 
-    public function parse(): array
+    public function parse(Source $src): array
     {
-        $this->tokens = $this->tokenizer->tokenize();
+        $this->src = $src;
+        $this->tokens = $this->tokenizer->tokenize($src);
         $nodes = [];
         while (true) {
             switch ($this->tokens->current()->kind) {
@@ -26,6 +30,7 @@ final class ReferenceParser
                     return $nodes;
                 default:
                     $nodes[] = $this->parseAnAssignment();
+                    break;
             }
         }
     }
@@ -124,10 +129,6 @@ final class ReferenceParser
 
     private function unexpected(Token $token, TokenKind ...$expected): ParseError
     {
-        return ParseError::unexpectedToken(
-            $token,
-            $this->tokenizer->getPosition($token->offset),
-            ...$expected,
-        );
+        return ParseError::unexpectedToken($this->src, $token, ...$expected);
     }
 }

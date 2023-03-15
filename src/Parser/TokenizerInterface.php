@@ -8,10 +8,9 @@ use Xdg\Dotenv\Exception\ParseError;
 interface TokenizerInterface
 {
     /**
+     * @param Source $src
      * @return Iterator<int, Token>
      * @throws ParseError
      */
-    public function tokenize(): Iterator;
-
-    public function getPosition(int $offset): SourcePosition;
+    public function tokenize(Source $src): Iterator;
 }

@@ -3,7 +3,8 @@
 namespace Xdg\Dotenv\Tests\Utils;
 
 use Iterator;
-use Xdg\Dotenv\Parser\SourcePosition;
+use Xdg\Dotenv\Parser\Source;
+use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\TokenizerInterface;
 
 final class MockTokenizer implements TokenizerInterface
@@ -13,13 +14,15 @@ final class MockTokenizer implements TokenizerInterface
     ) {
     }
 
-    public function tokenize(): Iterator
+    public function tokenize(Source $src): Iterator
     {
         yield from $this->tokens;
     }
 
-    public function getPosition(int $offset): SourcePosition
+    public function toSource(): Source
     {
-        return new SourcePosition(0, 0);
+        return Source::fromString(
+            implode('', array_map(fn(Token $t) => $t->value, $this->tokens))
+        );
     }
 }

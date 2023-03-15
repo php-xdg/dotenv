@@ -6,6 +6,7 @@ use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Xdg\Dotenv\Exception\ParseError;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\SourcePosition;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\Tokenizer;
@@ -18,13 +19,14 @@ final class TokenizerTest extends TestCase
     #[DataProvider('specificationProvider')]
     public function testSpecification(TokenizationTestDTO $dto): void
     {
-        $tokenizer = new Tokenizer($dto->input);
+        $tokenizer = new Tokenizer();
+        $src = Source::fromString($dto->input);
         if ($dto->error) {
             $this->expectException(ParseError::class);
         }
         $tokens = array_map(
             TokenizationTestDTO::convertToken(...),
-            iterator_to_array($tokenizer->tokenize(), false),
+            iterator_to_array($tokenizer->tokenize($src), false),
         );
         Assert::assertSame($dto->expected, $tokens);
     }
@@ -32,13 +34,14 @@ final class TokenizerTest extends TestCase
     #[DataProvider('specificationProvider')]
     public function testReferenceTokenizer(TokenizationTestDTO $dto): void
     {
-        $tokenizer = new ReferenceTokenizer($dto->input);
+        $tokenizer = new ReferenceTokenizer();
+        $src = Source::fromString($dto->input);
         if ($dto->error) {
             $this->expectException(ParseError::class);
         }
         $tokens = array_map(
             TokenizationTestDTO::convertToken(...),
-            iterator_to_array($tokenizer->tokenize(), false),
+            iterator_to_array($tokenizer->tokenize($src), false),
         );
         Assert::assertSame($dto->expected, $tokens);
     }
@@ -56,19 +59,11 @@ final class TokenizerTest extends TestCase
         }
     }
 
-    public function testGetPosition(): void
-    {
-        $tokenizer = new Tokenizer($input = "a\nb\nc");
-        $pos = $tokenizer->getPosition(\strlen($input) - 1);
-        $expected = new SourcePosition(3, 1);
-        Assert::assertEquals($expected, $pos);
-    }
-
     #[DataProvider('tokenizationStopsAfterEOFProvider')]
     public function testTokenizationStopsAfterEOF(string $input, array $expected): void
     {
-        $tokenizer = new Tokenizer($input);
-        $tokens = iterator_to_array($tokenizer->tokenize(), false);
+        $tokenizer = new Tokenizer();
+        $tokens = iterator_to_array($tokenizer->tokenize(Source::fromString($input)), false);
         Assert::assertEquals($expected, $tokens);
     }
 
@@ -98,8 +93,8 @@ final class TokenizerTest extends TestCase
     #[DataProvider('tokenOffsetsProvider')]
     public function testTokenOffsets(string $input, array $expected): void
     {
-        $tokenizer = new Tokenizer($input);
-        $tokens = iterator_to_array($tokenizer->tokenize(), false);
+        $tokenizer = new Tokenizer();
+        $tokens = iterator_to_array($tokenizer->tokenize(Source::fromString($input)), false);
         Assert::assertEquals($expected, $tokens);
     }
 
@@ -148,9 +143,9 @@ final class TokenizerTest extends TestCase
     #[DataProvider('errorPositionsProvider')]
     public function testErrorPositions(string $input, int $line, int $col): void
     {
+        $tokenizer = new Tokenizer();
         $this->expectExceptionMessage("on line {$line}, column {$col}");
-        $tokenizer = new Tokenizer($input);
-        $tokens = iterator_to_array($tokenizer->tokenize(), false);
+        $tokens = iterator_to_array($tokenizer->tokenize(Source::fromString($input)), false);
     }
 
     public static function errorPositionsProvider(): iterable

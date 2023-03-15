@@ -10,6 +10,7 @@ use PhpBench\Attributes\RetryThreshold;
 use PhpBench\Attributes\Revs;
 use PhpBench\Attributes\Subject;
 use Xdg\Dotenv\Parser\Parser;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Tokenizer;
 
 #[RetryThreshold(2.0)]
@@ -23,12 +24,12 @@ final class ParserBench
     #[ParamProviders(['inputProvider'])]
     public function default($args): void
     {
-        $parser = new Parser(new Tokenizer($args[0]));
-        $ast = $parser->parse();
+        $parser = new Parser(new Tokenizer());
+        $ast = $parser->parse($args[0]);
     }
 
     public static function inputProvider(): iterable
     {
-        yield 'resources/big.env' => [file_get_contents(__DIR__.'/resources/big.env')];
+        yield 'resources/big.env' => [Source::fromFile(__DIR__.'/resources/big.env')];
     }
 }

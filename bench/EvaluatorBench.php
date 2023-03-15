@@ -12,6 +12,7 @@ use PhpBench\Attributes\Subject;
 use Xdg\Dotenv\Evaluator\Evaluator;
 use Xdg\Dotenv\Evaluator\TokenEvaluator;
 use Xdg\Dotenv\Parser\Parser;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Tokenizer;
 
 #[RetryThreshold(2.0)]
@@ -26,20 +27,20 @@ final class EvaluatorBench
     public function ast($args): void
     {
         $evaluator = new Evaluator();
-        $parser = new Parser(new Tokenizer($args[0]));
-        $result = $evaluator->evaluate($parser->parse());
+        $parser = new Parser(new Tokenizer());
+        $result = $evaluator->evaluate($parser->parse($args[0]));
     }
 
     #[Subject]
     #[ParamProviders(['inputProvider'])]
     public function tokens($args): void
     {
-        $evaluator = new TokenEvaluator();
-        $result = $evaluator->evaluate(new Tokenizer($args[0]));
+        $evaluator = new TokenEvaluator(new Tokenizer());
+        $result = $evaluator->evaluate($args[0]);
     }
 
     public static function inputProvider(): iterable
     {
-        yield 'resources/big.env' => [file_get_contents(__DIR__.'/resources/big.env')];
+        yield 'resources/big.env' => [Source::fromFile(__DIR__.'/resources/big.env')];
     }
 }

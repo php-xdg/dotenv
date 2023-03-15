@@ -4,6 +4,7 @@ namespace Xdg\Dotenv\Tests\Specification;
 
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\Buffer;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\SourcePosition;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\TokenizerInterface;
@@ -20,26 +21,17 @@ final class ReferenceTokenizer implements TokenizerInterface
     private TokenizerState $state;
     private Buffer $temporaryBuffer;
 
-    public function __construct(
-        private readonly string $input,
-    ) {
-    }
-
-    public function getPosition(int $offset): SourcePosition
+    public function tokenize(Source $src): \Iterator
     {
-        return SourcePosition::fromOffset($this->input, $offset);
-    }
-
-    public function tokenize(): \Iterator
-    {
+        $input = $src->bytes;
         $this->pos = -1;
         $this->state = TokenizerState::AssignmentList;
-        $this->temporaryBuffer = new Buffer(0);
+        $this->temporaryBuffer = new Buffer();
         $quotingLevel = 0;
         $returnStates = new \SplStack();
 
         ADVANCE: ++$this->pos;
-        RECONSUME: $cc = $this->input[$this->pos] ?? '';
+        RECONSUME: $cc = $input[$this->pos] ?? '';
         switch ($this->state) {
             case TokenizerState::AssignmentList:
                 switch ($cc) {

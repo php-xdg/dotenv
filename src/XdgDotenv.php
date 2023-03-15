@@ -5,6 +5,7 @@ namespace Xdg\Dotenv;
 use Xdg\Dotenv\Evaluator\Evaluator;
 use Xdg\Dotenv\Exception\IOError;
 use Xdg\Dotenv\Parser\Parser;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Tokenizer;
 use Xdg\Environment\EnvironmentProviderInterface;
 use Xdg\Environment\Provider\ChainProvider;
@@ -56,14 +57,12 @@ final class XdgDotenv
             $files = [$files];
         }
         $env ??= self::getDefaultProvider();
+        $parser = new Parser(new Tokenizer());
         $evaluator = new Evaluator($override, $env);
         $scope = [];
         foreach ($files as $file) {
-            if (false === $input = @file_get_contents($file)) {
-                throw new IOError("Failed to read file: {$file}");
-            }
-            $parser = new Parser(new Tokenizer($input));
-            $scope = $evaluator->evaluate($parser->parse());
+            $src = Source::fromFile($file);
+            $scope = $evaluator->evaluate($parser->parse($src));
         }
         return $scope;
     }

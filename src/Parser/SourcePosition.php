@@ -12,18 +12,15 @@ final class SourcePosition
 
     public static function fromOffset(string $input, int $offset): self
     {
-        if ($offset < 0 || $offset > \strlen($input)) {
-            // we allow offsets at strlen($input) for EOF tokens.
-            throw new \InvalidArgumentException('Offset must be inside the input range.');
-        }
-
+        // we allow offsets at strlen($input) for EOF tokens.
+        $offset = min(\strlen($input), max(0, $offset));
         $lineCount = \substr_count($input, "\n", 0, $offset);
         if ($lineCount === 0) {
             return new self(1, $offset + 1);
         }
 
         $searchOffset = -(\strlen($input) - $offset);
-        if ("\n" === $input[$offset] ?? '') {
+        if ($input[$offset] ?? '' === "\n") {
             $searchOffset--;
         }
         $lastLineOffset = strrpos($input, "\n", $searchOffset);

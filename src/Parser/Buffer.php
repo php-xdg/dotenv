@@ -5,8 +5,5 @@ namespace Xdg\Dotenv\Parser;
 final class Buffer
 {
     public string $value = '';
-    public function __construct(
-        public int $offset,
-    ) {
-    }
+    public int $offset = 0;
 }

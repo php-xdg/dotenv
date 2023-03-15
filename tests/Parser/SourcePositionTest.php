@@ -30,18 +30,11 @@ final class SourcePositionTest extends TestCase
         yield 'offset is a newline' => [
             "a\nb\nc", 3, new SourcePosition(2, 2),
         ];
-    }
-
-    #[DataProvider('invalidOffsetsProvider')]
-    public function testInvalidOffsets(string $input, int $offset): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        SourcePosition::fromOffset($input, $offset);
-    }
-
-    public static function invalidOffsetsProvider(): iterable
-    {
-        yield 'negative offset' => ['foo', -1];
-        yield 'offset after EOF' => ['foo', \strlen('foo') + 1];
+        yield 'negative offset' => [
+            'foo', -12, new SourcePosition(1, 1),
+        ];
+        yield 'offset after EOF' => [
+            "foo\nbar", 42, new SourcePosition(2, 4),
+        ];
     }
 }

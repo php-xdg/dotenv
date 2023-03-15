@@ -4,6 +4,7 @@ namespace Xdg\Dotenv\Evaluator;
 
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Exception\UndefinedVariable;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\TokenizerInterface;
 use Xdg\Dotenv\Parser\TokenKind;
@@ -18,24 +19,25 @@ use Xdg\Environment\Provider\ArrayProvider;
  */
 final class TokenEvaluator
 {
+    private Source $src;
     private array $scope;
-    private TokenizerInterface $tokenizer;
     /**
      * @var \Iterator<int, Token>
      */
     private \Iterator $tokens;
 
     public function __construct(
+        private readonly TokenizerInterface $tokenizer,
         private readonly bool $overrideEnv = false,
         private readonly EnvironmentProviderInterface $env = new ArrayProvider([], false),
     ) {
     }
 
-    public function evaluate(TokenizerInterface $tokenizer): array
+    public function evaluate(Source $src): array
     {
+        $this->src = $src;
         $this->scope = [];
-        $this->tokenizer = $tokenizer;
-        $this->tokens = $this->tokenizer->tokenize();
+        $this->tokens = $this->tokenizer->tokenize($src);
         while (true) {
             $token = $this->tokens->current();
             switch ($token->kind) {
@@ -208,10 +210,7 @@ final class TokenEvaluator
                     --$nestingLevel;
                     break;
                 case TokenKind::EOF:
-                    throw ParseError::atPos(
-                        'Unterminated expansion.',
-                        $this->tokenizer->getPosition($token->offset),
-                    );
+                    throw ParseError::in($this->src, $token->offset, 'Unterminated expansion.');
                 default:
                     break;
             }
@@ -220,6 +219,6 @@ final class TokenEvaluator
 
     private function unexpected(Token $token, TokenKind ...$expected): ParseError
     {
-        return ParseError::unexpectedToken($token, $this->tokenizer->getPosition($token->offset), ...$expected);
+        return ParseError::unexpectedToken($this->src, $token, ...$expected);
     }
 }

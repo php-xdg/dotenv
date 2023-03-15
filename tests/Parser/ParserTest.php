@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Xdg\Dotenv\Exception\ParseError;
 use Xdg\Dotenv\Parser\Parser;
+use Xdg\Dotenv\Parser\Source;
 use Xdg\Dotenv\Parser\Token;
 use Xdg\Dotenv\Parser\TokenKind;
 use Xdg\Dotenv\Tests\Utils\MockTokenizer;
@@ -21,7 +22,7 @@ final class ParserTest extends TestCase
         ]);
         $parser = new Parser($tokenizer);
         $this->expectException(ParseError::class);
-        $parser->parse();
+        $parser->parse(Source::fromString(''));
     }
 
     public static function parseErrorsProvider(): iterable
